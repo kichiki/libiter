@@ -1,7 +1,10 @@
 /* header file of bi-cgstab.c (wrapper for iterative solver routines)
  * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: bi-cgstab.h,v 2.1 2001/10/13 11:46:15 ichiki Exp $
+ * $Id: bi-cgstab.h,v 2.2 2001/10/19 14:31:22 ichiki Exp $
  */
+
+/** global variables **/
+extern int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
 
 void
 solve_iter_stab (int n,
