@@ -1,6 +1,6 @@
 /* BLAS
  * Copyright (C) 1999 Kengo ICHIKI <kengo@caltech.edu>
- * $Id: myblas.c,v 1.1 1999/09/05 21:23:56 ichiki Exp $
+ * $Id: myblas.c,v 1.2 1999/09/05 22:34:45 ichiki Exp $
  *
  * Excerpted from : BLAS package
  */
@@ -200,7 +200,7 @@ dcopy (int n, double *dx, int incx,
  *     Sven Hammarling, Nag Ltd.
  */
 double
-dnrm2 (int n, double *x, int incx)
+dnrm2_ (int n, double *x, int incx)
 {
   /* .. Parameters .. */
   static double one = 1.0;
@@ -241,6 +241,48 @@ dnrm2 (int n, double *x, int incx)
     }
 
   return (norm);
+}
+
+double
+dnrm2 (int n, double *x, int incx)
+{
+  int i;
+  int ix;
+  int m;
+  double norm;
+
+
+  if (n < 1 || incx < 1)
+    return (0.0);
+  else if (n == 1)
+    return (fabs (x [0]));
+  else if (incx != 1)
+    {
+      norm = 0.0;
+      for (ix = 0; ix < 1 + (n - 1) * incx; ix += incx)
+	if (x [ix] != 0.0)
+	  norm += x [ix] * x [ix];
+    }
+  else /* incx == 1 */
+    {
+      norm = 0.0;
+      m = n % 5;
+      if (m != 0)
+	{
+	  for (i = 0; i < m; i ++)
+	    norm += x [i] * x [i];
+	}
+      for (i = m; i < n; i += 5)
+	{
+	  norm +=
+	    x [i] * x [i]
+	    + x [i + 1] * x [i + 1]
+	    + x [i + 2] * x [i + 2]
+	    + x [i + 3] * x [i + 3]
+	    + x [i + 4] * x [i + 4];
+	}
+    }
+  return (sqrt (norm));
 }
 
 
