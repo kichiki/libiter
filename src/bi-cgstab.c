@@ -1,6 +1,6 @@
-/* wrapper for solver routines here
- * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 1.7 2001/02/07 05:24:50 ichiki Exp $
+/* wrapper for iterative solver routines
+ * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
+ * $Id: bi-cgstab.c,v 2.1 2001/10/13 11:47:03 ichiki Exp $
  *
  * (solver routines themselves are originally written by martin h. gutknecht)
  */
@@ -11,32 +11,30 @@
 #include "bi-cgstab.h"
 
 
-/** global variables **/
-int STAB_it_max;
-double STAB_log10_eps;
-
 /* wrapper routine for solvers below
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
  *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   user_data : pointer to be passed to solver and atimes routines
  *   solver : solver routine to call
- *   (global) STAB_it_max : max # iterations
- *   (global) STAB_log10_eps : log10(eps), where eps is the accuracy
+ *   it_max : max # iterations
+ *   log10_eps : log10(eps), where eps is the accuracy
  * OUTPUT
  *   x [n] : solution
  */
 void
 solve_iter_stab (int n,
 		 double *b, double *x,
-		 void (*atimes) (int, double *, double *),
+		 void (*atimes) (int, double *, double *, void *),
+		 void * user_data,
 		 void (*solver) (int, double *, double *, int,
 				 double, double, int *, double *,
-				 void (*) (int, double *, double *)))
+				 void (*)
+				 (int, double *, double *, void *),
+				 void *),
+		 int it_max, double log10_eps)
 {
-  extern int STAB_it_max;
-  extern double STAB_log10_eps;
-
   int i;
 
   double hnor;
@@ -51,7 +49,7 @@ solve_iter_stab (int n,
     hnor = log10 (hnor) / 2.0;
 
   solver (n, b, x,
-	  STAB_it_max, STAB_log10_eps,
+	  it_max, log10_eps,
 	  hnor, &iter, &residual, atimes);
 
   fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
@@ -86,7 +84,8 @@ void
 sta (int m, double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
-     void (*myatimes) (int, double *, double *))
+     void (*myatimes) (int, double *, double *, void *),
+     void * user_data)
 {
   int i;
 
@@ -138,7 +137,7 @@ sta (int m, double *b, double *x, int kend,
   beta  = 0.0;
   omega = 0.0;
   rho0  = 0.0;
-  myatimes (m, x, tmp);
+  myatimes (m, x, tmp, user_data);
   for (i=0; i<m; i++) /* 100 */
     {
       tbs = b [i] - tmp [i];
@@ -163,7 +162,7 @@ sta (int m, double *b, double *x, int kend,
 
       if((*hg) <= eps) goto end_sta;
       pap = 0.0;
-      myatimes (m, p, tmp);
+      myatimes (m, p, tmp, user_data);
       for (i=0; i<m; i++) /* 220 */
 	{
 	  tbs = tmp [i];
@@ -179,7 +178,7 @@ sta (int m, double *b, double *x, int kend,
 	}/* 230 */
       pap = 0.0;
       rur = 0.0;
-      myatimes (m, r, tmp);
+      myatimes (m, r, tmp, user_data);
       for (i=0; i<m; i++) /* 240 */
 	{
 	  tbs = tmp [i];
@@ -228,10 +227,11 @@ end_sta:
  *   *hg : log10(residual)
  */
 void
-st2 (int m, double *b, double *x, int kend,
-     double eps, double hnor,
-     int *iter, double *hg,
-     void (*myatimes) (int, double *, double *))
+sta2 (int m, double *b, double *x, int kend,
+      double eps, double hnor,
+      int *iter, double *hg,
+      void (*myatimes) (int, double *, double *, void *),
+      void * user_data)
 {
   int i;
 
@@ -246,9 +246,7 @@ st2 (int m, double *b, double *x, int kend,
   double rho1;
 
   double *r0, *w, *q, *u, *z, *y;
-  /*dimension r0(m), w(m), q(m), u(m), z(m), y(m) */
   double *r, *p;
-  /*dimension r(-1:m+1), p(-1:m+1) */
 
   double taa, tbb, tcc, tdd, tee;
 
@@ -261,15 +259,6 @@ st2 (int m, double *b, double *x, int kend,
   double *tmp;
 
 
-  /*r0  = my_d_malloc (m, "r0");
-  w   = my_d_malloc (m, "w");
-  q   = my_d_malloc (m, "q");
-  u   = my_d_malloc (m, "u");
-  z   = my_d_malloc (m, "z");
-  y   = my_d_malloc (m, "y");
-  r   = my_d_malloc (m, "r");
-  p   = my_d_malloc (m, "p");
-  tmp = my_d_malloc (m, "tmp");*/
   r0  = (double *) malloc (sizeof (double) * m);
   w   = (double *) malloc (sizeof (double) * m);
   q   = (double *) malloc (sizeof (double) * m);
@@ -295,7 +284,7 @@ st2 (int m, double *b, double *x, int kend,
 
   beta = 0.0;
   rho0 = 0.0;
-  myatimes (m, x, tmp);
+  myatimes (m, x, tmp, user_data);
   for (i=0; i<m; i++) /* 100 */
     {
       tbs = b [i] - tmp [i];
@@ -324,7 +313,7 @@ st2 (int m, double *b, double *x, int kend,
 
       if((*hg) <= eps) goto end_st2;
       pap = 0.0;
-      myatimes (m, p, tmp);
+      myatimes (m, p, tmp, user_data);
       for (i=0; i<m; i++) /* 220 */
 	{
 	  tbs = tmp [i];
@@ -340,7 +329,7 @@ st2 (int m, double *b, double *x, int kend,
           r [i] -= tbs;
           x [i] += alpha * p [i];
 	}/* 230 */
-      myatimes (m, r, w); /* w [] -> wn = A tn , tn <- r [] */
+      myatimes (m, r, w, user_data); /* w [] -> wn = A tn , tn <- r [] */
       /* 240 */
       taa = 0.0;
       tbb = 0.0;
@@ -408,7 +397,8 @@ void
 st2_chk (int m, double *b, double *x, int kend,
 	 double eps, double hnor,
 	 int *iter, double *hg,
-	 void (*myatimes) (int, double *, double *))
+	 void (*myatimes) (int, double *, double *, void *),
+	 void * user_data)
 {
   int i;
 
@@ -461,7 +451,7 @@ st2_chk (int m, double *b, double *x, int kend,
 
   beta = 0.0;
   rho0 = 0.0;
-  myatimes (m, x, tmp);
+  myatimes (m, x, tmp, user_data);
   for (i=0; i<m; i++) /* 100 */
     {
       tbs = b [i] - tmp [i];
@@ -490,7 +480,7 @@ st2_chk (int m, double *b, double *x, int kend,
 
       if((*hg) <= eps) goto end_st2_chk;
       pap = 0.0;
-      myatimes (m, p, tmp);
+      myatimes (m, p, tmp, user_data);
       for (i=0; i<m; i++) /* 220 */
 	{
 	  tbs = tmp [i];
@@ -506,7 +496,7 @@ st2_chk (int m, double *b, double *x, int kend,
           r [i] -= tbs;
           x [i] += alpha * p [i];
 	}/* 230 */
-      myatimes (m, r, w); /* w [] -> wn = A tn , tn <- r [] */
+      myatimes (m, r, w, user_data); /* w [] -> wn = A tn , tn <- r [] */
       /* 240 */
       taa = 0.0;
       tbb = 0.0;
@@ -584,7 +574,8 @@ void
 gpb (int m, double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
-     void (*myatimes) (int, double *, double *))
+     void (*myatimes) (int, double *, double *, void *),
+     void * user_data)
 {
   int i;
 
@@ -648,7 +639,7 @@ gpb (int m, double *b, double *x, int kend,
 
   beta = 0.0;
   rho0 = 0.0;
-  myatimes (m, x, tmp);
+  myatimes (m, x, tmp, user_data);
   for (i=0; i<m; i++) /* 100 */
     {
       tbs = b [i] - tmp [i];
@@ -677,7 +668,7 @@ gpb (int m, double *b, double *x, int kend,
 
       if((*hg) <= eps) goto end_gpb;
       pap = 0.0;
-      myatimes (m, p, tmp); /* p [] -> pn */
+      myatimes (m, p, tmp, user_data); /* p [] -> pn */
       for (i=0; i<m; i++) /* 220 */
 	{
 	  tbs = tmp [i];
@@ -693,7 +684,7 @@ gpb (int m, double *b, double *x, int kend,
           r [i] -= tbs;
           x [i] += alpha * p [i];
 	}/* 230 */
-      myatimes (m, r, w); /* w [] -> wn = A tn , tn <- r [] */
+      myatimes (m, r, w, user_data); /* w [] -> wn = A tn , tn <- r [] */
       /* 240 */
       taa = 0.0; /* taa -> (A tn, A tn) */
       tbb = 0.0; /* tbb -> (  yn,   yn) */
@@ -761,7 +752,8 @@ void
 gpb_chk (int m, double *b, double *x, int kend,
 	 double eps, double hnor,
 	 int *iter, double *hg,
-	 void (*myatimes) (int, double *, double *))
+	 void (*myatimes) (int, double *, double *, void *),
+	 void * user_data)
 {
   int i;
 
@@ -814,7 +806,7 @@ gpb_chk (int m, double *b, double *x, int kend,
 
   beta = 0.0;
   rho0 = 0.0;
-  myatimes (m, x, tmp);
+  myatimes (m, x, tmp, user_data);
   for (i=0; i<m; i++) /* 100 */
     {
       tbs = b [i] - tmp [i];
@@ -843,7 +835,7 @@ gpb_chk (int m, double *b, double *x, int kend,
 
       if((*hg) <= eps) goto end_gpb_chk;
       pap = 0.0;
-      myatimes (m, p, tmp); /* p [] -> pn */
+      myatimes (m, p, tmp, user_data); /* p [] -> pn */
       for (i=0; i<m; i++) /* 220 */
 	{
 	  tbs = tmp [i];
@@ -859,7 +851,7 @@ gpb_chk (int m, double *b, double *x, int kend,
           r [i] -= tbs;
           x [i] += alpha * p [i];
 	}/* 230 */
-      myatimes (m, r, w); /* w [] -> wn = A tn , tn <- r [] */
+      myatimes (m, r, w, user_data); /* w [] -> wn = A tn , tn <- r [] */
       /* 240 */
       taa = 0.0; /* taa -> (A tn, A tn) */
       tbb = 0.0; /* tbb -> (  yn,   yn) */
