@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998,1999 Kengo ICHIKI <kengo@caltech.edu>
- * $Id: gmres.c,v 1.7 1999/08/04 19:07:02 ichiki Exp $
+ * $Id: gmres.c,v 1.8 1999/08/05 19:45:29 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -10,6 +10,7 @@
 #include <stdlib.h> /* malloc (), free() */
 #include <stdio.h>
 #include <math.h>
+#include "myroutines.h" /* my_d_malloc() */
 
 #include "mygmres.h"
 
@@ -35,12 +36,12 @@ mygmres_m (int n, double *f, double *x,
     g0,
     *tmp, *v, *h, *g, *c, *s;
 
-  tmp = (double *) malloc (sizeof (double) * n);
-  v   = (double *) malloc (sizeof (double) * (m+1)*n);
-  h   = (double *) malloc (sizeof (double) * m*m);
-  g   = (double *) malloc (sizeof (double) * m+1);
-  c   = (double *) malloc (sizeof (double) * m);
-  s   = (double *) malloc (sizeof (double) * m);
+  tmp = my_d_malloc (n, "tmp");
+  v   = my_d_malloc ((m + 1) * n, "v");
+  h   = my_d_malloc (m * m, "h");
+  g   = my_d_malloc (m + 1, "g");
+  c   = my_d_malloc (m, "c");
+  s   = my_d_malloc (m, "s");
 
   *iter = 0;
   /* 1. start: */
@@ -171,12 +172,12 @@ mygmres (int n, double *f, double *x,
 
   m = itmax;
 
-  tmp = (double *) malloc (sizeof (double) * n);
-  v   = (double *) malloc (sizeof (double) * (m+1)*n);
-  h   = (double *) malloc (sizeof (double) * m*m);
-  g   = (double *) malloc (sizeof (double) * m+1);
-  c   = (double *) malloc (sizeof (double) * m);
-  s   = (double *) malloc (sizeof (double) * m);
+  tmp = my_d_malloc (n, "tmp");
+  v   = my_d_malloc ((m + 1) * n, "v");
+  h   = my_d_malloc (m * m, "h");
+  g   = my_d_malloc (m + 1, "g");
+  c   = my_d_malloc (m, "c");
+  s   = my_d_malloc (m, "s");
 
   /* 1. start: */
   /* compute r0 */
