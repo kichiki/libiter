@@ -6,7 +6,7 @@
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
  * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: orthomin.c,v 1.3 1999/05/25 19:42:17 ichiki Exp $
+ * $Id: orthomin.c,v 1.4 1999/06/09 17:37:16 ichiki Exp $
  */
 
 #include <stdio.h> /* fprintf() */
@@ -15,11 +15,6 @@
 #include "myroutines.h" /* my_d_malloc() */
 
 #include "orthomin.h"
-
-/* function prototypes */
-/* these should be defined in main file */
-void
-myatimes (int n, double *x, double *y);
 
 
 /* orthomin(k) method
@@ -30,18 +25,18 @@ myatimes (int n, double *x, double *y);
  *   b[m] : r-h-s vector
  *   eps : log10 of cutoff
  *   hnor : log10 of norm of b[]
+ *   myatimes (int m, double *x, double b) : calc matrix-vector product
  * OUTPUT
  *   x[m] : solution
  *   *iter : # of iteration
  *   *hg : log10(residual)
- * using
- *   myatimes ();
  */
 void
 otmk (int m, double *b, double *x,
       int kres, int kend,
       double eps, double hnor,
-      int *iter, double *hg)
+      int *iter, double *hg,
+      void (*myatimes) (int, double *, double *))
 {
   double *r; /* r[m] */
   double *p; /* p[(kres+1) * m] */
