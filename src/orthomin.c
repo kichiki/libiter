@@ -6,15 +6,58 @@
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
  * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: orthomin.c,v 1.5 2001/01/07 05:48:02 ichiki Exp $
+ * $Id: orthomin.c,v 1.6 2001/02/09 06:54:43 ichiki Exp $
  */
-
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
-//#include "../myroutines.h" // my_d_malloc()
 
 #include "orthomin.h"
+
+
+/* wrapper routine for solvers below
+ * INPUT
+ *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
+ *   b [n] : given vector
+ *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   solver : solver routine to call
+ *   (global) STAB_it_max : max # iterations
+ *   (global) STAB_log10_eps : log10(eps), where eps is the accuracy
+ * OUTPUT
+ *   x [n] : solution
+ */
+void
+solve_iter_otmk (int n,
+		 double *b, double *x,
+		 void (*atimes) (int, double *, double *),
+		 void (*solver) (int, double *, double *, int, int,
+				 double, double, int *, double *,
+				 void (*) (int, double *, double *)))
+{
+  extern int STAB_it_max;
+  extern double STAB_log10_eps;
+  extern int GMRES_it_restart;
+
+  int i;
+
+  double hnor;
+  double residual;
+  int iter;
+
+
+  hnor = 0.0;
+  for (i = 0; i < n; ++i)
+    hnor += b [i] * b [i];
+  if (hnor != 0.0)
+    hnor = log10 (hnor) / 2.0;
+
+  solver (n, b, x,
+	  GMRES_it_restart, STAB_it_max,
+	  STAB_log10_eps,
+	  hnor, &iter, &residual, atimes);
+
+  fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
+}
 
 
 /* orthomin(k) method
