@@ -5,8 +5,8 @@
  *             ver. 1.1 aug. 31 1995 by s. l. zhang
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
- * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: orthomin.c,v 1.6 2001/02/09 06:54:43 ichiki Exp $
+ * translated from fortran to C by Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
+ * $Id: orthomin.c,v 2.1 2001/10/13 12:01:27 ichiki Exp $
  */
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
@@ -19,25 +19,28 @@
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
- *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   atimes (n, x, b, user_data) : routine to calc A.x and return b[]
+ *   user_data : pointer to be passed to solver and atimes routines
  *   solver : solver routine to call
- *   (global) STAB_it_max : max # iterations
- *   (global) STAB_log10_eps : log10(eps), where eps is the accuracy
+ *   it_max : max # iterations
+ *   log10_eps : log10(eps), where eps is the accuracy
  * OUTPUT
  *   x [n] : solution
  */
 void
 solve_iter_otmk (int n,
 		 double *b, double *x,
-		 void (*atimes) (int, double *, double *),
-		 void (*solver) (int, double *, double *, int, int,
-				 double, double, int *, double *,
-				 void (*) (int, double *, double *)))
+		 void (*atimes) (int, double *, double *, void *),
+		 void * user_data,
+		 void (*solver) (int, double *, double *,
+				 int, int, double,
+				 double, int *, double *,
+				 void (*)
+				 (int, double *, double *, void *),
+				 void *),
+		 int it_max, double log10_eps,
+		 int it_restart)
 {
-  extern int STAB_it_max;
-  extern double STAB_log10_eps;
-  extern int GMRES_it_restart;
-
   int i;
 
   double hnor;
@@ -52,9 +55,9 @@ solve_iter_otmk (int n,
     hnor = log10 (hnor) / 2.0;
 
   solver (n, b, x,
-	  GMRES_it_restart, STAB_it_max,
-	  STAB_log10_eps,
-	  hnor, &iter, &residual, atimes);
+	  it_restart, it_max, log10_eps,
+	  hnor, &iter, &residual, atimes,
+	  user_data);
 
   fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
@@ -69,6 +72,7 @@ solve_iter_otmk (int n,
  *   eps : log10 of cutoff
  *   hnor : log10 of norm of b[]
  *   myatimes (int m, double *x, double *b) : calc matrix-vector product
+ *   user_data : pointer to be passed to atimes routines
  * OUTPUT
  *   x[m] : solution
  *   *iter : # of iteration
@@ -79,7 +83,8 @@ otmk (int m, double *b, double *x,
       int kres, int kend,
       double eps, double hnor,
       int *iter, double *hg,
-      void (*myatimes) (int, double *, double *))
+      void (*myatimes) (int, double *, double *, void *),
+      void * user_data)
 {
   double *r; /* r[m] */
   double *p; /* p[(kres+1) * m] */
@@ -128,14 +133,14 @@ otmk (int m, double *b, double *x,
     }
 
 
-  myatimes (m, x, tmp);
+  myatimes (m, x, tmp, user_data);
   for (i=0; i<m; i++) /* 110 */
     {
       tbs = b[i] - tmp[i];
       r[i] = tbs;
       p[0 * m + i] = tbs;
     }/* 110 */
-  myatimes (m, r, tmp);
+  myatimes (m, r, tmp, user_data);
   for (i=0; i<m; i++) /* 120 */
     {
       ap[0 * m + i] = tmp[i];
@@ -166,7 +171,7 @@ otmk (int m, double *b, double *x,
 	  x[i] += alpha * p[k1 * m + i];
 	}/* 220 */
       k2 = ((*iter) + 1) % (kres + 1);
-      myatimes (m, r, tmp);
+      myatimes (m, r, tmp, user_data);
       for (i=0; i<m; i++) /* 230 */
 	{
 	  p[k2 * m + i] = r[i];
