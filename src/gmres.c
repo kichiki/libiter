@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998,1999 Kengo ICHIKI <kengo@caltech.edu>
- * $Id: gmres.c,v 1.9 1999/09/05 22:33:18 ichiki Exp $
+ * $Id: gmres.c,v 1.10 2000/06/27 07:23:54 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -201,9 +201,12 @@ mygmres (int n, double *f, double *x,
 
       *err = fabs (g [j + 1]); /* residual */
       /* if satisfied, */
-      if (*err <= tol) break;
+      if (*err <= tol)
+	{
+	  j ++; /* this is because ++(*iter) in gmres(m) */
+	  break;
+	}
     }
-  j++;/* this is because ++(*iter) in gmres(m) */
   *iter = j;
 
   /* 3. form the approximate solution */
