@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: libiter.h,v 2.2 2001/10/13 23:03:44 ichiki Exp $
+ * $Id: libiter.h,v 2.3 2001/10/19 14:34:59 ichiki Exp $
  */
 
 /* from blas.h */
@@ -24,10 +24,16 @@ void
 dscalz (int n, double da, double *dx, int incx,
 	double *dz, int incz);
 
+
+/** from mygmres.h **/
 /* header file of mygmres.c
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: libiter.h,v 2.2 2001/10/13 23:03:44 ichiki Exp $
+ * Id: mygmres.h,v 2.3 2001/10/19 14:29:41 ichiki Exp
  */
+
+/** global variables **/
+extern int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
+
 
 void
 solve_iter_gmres (int n,
@@ -48,11 +54,15 @@ mygmres (int n, double *f, double *x,
 	 void (*myatimes) (int, double *, double *, void *),
 	 void * user_data);
 
-/* from bi-cgstab.h */
+
+/** from bi-cgstab.h **/
 /* header file of bi-cgstab.c (wrapper for iterative solver routines)
  * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * Id: bi-cgstab.h,v 2.1 2001/10/13 11:46:15 ichiki Exp
+ * Id: bi-cgstab.h,v 2.2 2001/10/19 14:31:22 ichiki Exp
  */
+
+/** global variables **/
+extern int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
 
 void
 solve_iter_stab (int n,
@@ -96,11 +106,15 @@ gpb_chk (int m, double *b, double *x, int kend,
 	 void (*myatimes) (int, double *, double *, void *),
 	 void * user_data);
 
-/* from orthomin.h */
+
+/** from orthomin.h **/
 /* header file of orthomin.c
  * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * Id: orthomin.h,v 2.1 2001/10/13 12:01:56 ichiki Exp
+ * Id: orthomin.h,v 2.2 2001/10/19 14:32:55 ichiki Exp
  */
+
+/** global variables **/
+extern int ITER_otmk_debug; /* [0|1]: [not print/print] iter and res */
 
 void
 solve_iter_otmk (int n,
