@@ -6,13 +6,16 @@
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
  * translated from fortran to C by Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: orthomin.c,v 2.1 2001/10/13 12:01:27 ichiki Exp $
+ * $Id: orthomin.c,v 2.2 2001/10/19 14:32:18 ichiki Exp $
  */
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
 
 #include "orthomin.h"
+
+/** global variables **/
+int ITER_otmk_debug; /* [0|1]: [not print/print] iter and res */
 
 
 /* wrapper routine for solvers below
@@ -41,6 +44,7 @@ solve_iter_otmk (int n,
 		 int it_max, double log10_eps,
 		 int it_restart)
 {
+  extern int ITER_otmk_debug; /* [0|1]: [not print/print] iter and res */
   int i;
 
   double hnor;
@@ -59,7 +63,8 @@ solve_iter_otmk (int n,
 	  hnor, &iter, &residual, atimes,
 	  user_data);
 
-  fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
+  if (ITER_otmk_debug)
+    fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
 
 
