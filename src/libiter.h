@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: libiter.h,v 1.3 2001/01/29 08:38:07 ichiki Exp $
+ * $Id: libiter.h,v 1.4 2001/01/29 09:38:40 ichiki Exp $
  */
 
 /* from blas.h */
@@ -42,7 +42,7 @@ back_sub (int m, int nn,
 /* from bi-cgstab.h */
 /** global variables **/
 extern int STAB_it_max;
-extern double STAB_log10_exp;
+extern double STAB_log10_eps;
 
 
 void
