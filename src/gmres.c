@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: gmres.c,v 2.2 2001/10/13 23:02:36 ichiki Exp $
+ * $Id: gmres.c,v 2.3 2001/10/19 14:29:14 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -13,6 +13,10 @@
 #include "blas.h"
 
 #include "mygmres.h"
+
+/** global variables **/
+int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
+
 
 static void
 back_sub (int m, int nn,
@@ -37,6 +41,7 @@ solve_iter_gmres (int n,
 		  void * user_data,
 		  int it_max, int it_restart, double eps)
 {
+  extern int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
   double residual;
   int iter;
 
@@ -47,7 +52,8 @@ solve_iter_gmres (int n,
 	     atimes,
 	     user_data);
 
-  fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
+  if (ITER_mygmres_debug)
+    fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
 
 void
