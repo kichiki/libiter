@@ -1,7 +1,11 @@
 /* header file of mygmres.c
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: gmres.h,v 2.2 2001/10/13 23:01:02 ichiki Exp $
+ * $Id: gmres.h,v 2.3 2001/10/19 14:29:41 ichiki Exp $
  */
+
+/** global variables **/
+extern int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
+
 
 void
 solve_iter_gmres (int n,
