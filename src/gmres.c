@@ -1,13 +1,15 @@
 /**************************************************************
- $Id: gmres.c,v 1.1 1998/06/20 06:01:59 ichiki Exp $
+ $Id: gmres.c,v 1.2 1998/06/20 19:18:45 ichiki Exp $
  GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
  vol7(1986) pp.856-869
  implemented by Kengo Ichiki @ Caltech
 
  $Log: gmres.c,v $
+ Revision 1.2  1998/06/20 19:18:45  ichiki
+ make portable subroutine 'myatimes', which multiply vector to matrix.
+
  Revision 1.1  1998/06/20 06:01:59  ichiki
  Initial revision
-
 
 **************************************************************/
 
@@ -16,21 +18,12 @@
 #include <math.h>
 
 #include "nrutil.h"
-
-void mygmres(unsigned long n, double a[], double f[], double x[],
-	     int m,
-	     int itol, double tol,
-	     int itmax, int *iter, double *err);
-void back_sub(unsigned long m, double r[], double g[], double y[]);
-double norm(unsigned long n, double x[]);
-double inner(unsigned long n, double x[], double y[]);
-void atimes(unsigned long n, double a[], double x[], double r[], int itrnsp);
-void asolve(unsigned long n, double a[], double b[], double x[], int itrnsp);
+#include "mygmres.h"
 
 /* q[] は不要、g[] をその場で計算すればよい */
 /* r[] は対角部分とその下１列が H[] (h_i,j) と違うだけ */
 /* しかも下１列は回転で 0 になるので、対角部分だけ保存しておけばよい */
-void mygmres(unsigned long n, double a[], double f[], double x[],
+void mygmres(unsigned long n, double f[], double x[],
 	     int m,
 	     int itol, double tol,
 	     int itmax, int *iter, double *err)
@@ -60,12 +53,15 @@ void mygmres(unsigned long n, double a[], double f[], double x[],
 
   /* 1. start: */
   /* compute r0 */
+  /* tmp = A.x0
   for(i=0;i<n;i++){
-    /* tmp = A.x0 */
     tmp[i]= 0.0;
     for(k=0;k<n;k++){
       tmp[i]+= a[i*n+k]*x[k];
     }
+  } */
+  myatimes(n,x,tmp);
+  for(i=0;i<n;i++){
     tmp[i] = f[i]-tmp[i]; /* r0 */
   }
   /* compute v1 */
@@ -78,13 +74,14 @@ void mygmres(unsigned long n, double a[], double f[], double x[],
     ++(*iter);
     /* 2. iterate: */
     for(j=0;j<m;j++){
-      /* tmp = A.vj */
+      /* tmp = A.vj
       for(i=0;i<n;i++){
 	tmp[i] = 0.0;
 	for(k=0;k<n;k++){
 	  tmp[i]+= a[i*n+k]*v[j*n+k];
 	}
-      }
+      }*/
+      myatimes(n,&v[j*n],tmp);
       /* h_i,j (i=1,...,j) */
       for(i=0;i<=j;i++){
 	h[i*m+j] = inner(n,tmp,&v[i*n]);
@@ -138,12 +135,15 @@ void mygmres(unsigned long n, double a[], double f[], double x[],
     if( *err <= tol ) break;
     /* else */
     /* compute r_m */
+    /* tmp = A.x_m
     for(i=0;i<n;i++){
-      /* tmp = A.x_m */
       tmp[i]= 0.0;
       for(k=0;k<n;k++){
 	tmp[i]+= a[i*n+k]*x[k];
       }
+    }*/
+    myatimes(n,x,tmp);
+    for(i=0;i<n;i++){
       tmp[i] = f[i]-tmp[i]; /* r0 */
     }
     /* compute v1 */
@@ -163,9 +163,12 @@ void mygmres(unsigned long n, double a[], double f[], double x[],
 
 void back_sub(unsigned long m, double r[], double g[], double y[])
 {
-  int i,j;
+  unsigned long i,j,jj;
 
-  for(j=m-1;j>=0;j--){
+  /*for(j=m-1;j>=0;j--){*/
+  /* above for-loop fail, because j is unsigned!! */
+  for(jj=0;jj<m;jj++){
+    j = m-1-jj;
     y[j] = 0.0;
     for(i=j+1;i<m;i++){
       y[j]-=r[i*m+j]*y[i];
@@ -195,32 +198,15 @@ double inner(unsigned long n, double x[], double y[])
   return ans;
 }
 
-void atimes(unsigned long n, double a[], double x[], double r[], int itrnsp)
+void myatimes(unsigned long n, double x[], double y[])
 {
+  extern double ITER_A[];
   unsigned long i,j;
 
-  if(itrnsp) {
-    for (i=0;i<n;i++){
-      r[i] = 0.0;
-      for (j=0;j<n;j++){
-	r[i] += a[i*n+j]*x[j];
-      }
+  for(i=0;i<n;i++){
+    y[i]= 0.0;
+    for(j=0;j<n;j++){
+      y[i] += ITER_A[i*n+j]*x[j];
     }
-  }else{
-    for (i=0;i<n;i++){
-      r[i] = 0.0;
-      for (j=0;j<n;j++){
-	r[i] += a[j*n+i]*x[j];
-      }
-    }
-  }
-}
-
-void asolve(unsigned long n, double a[], double b[], double x[], int itrnsp)
-{
-  unsigned long i;
-
-  for (i=0;i<n;i++){
-    x[i] = a[i*n+i]*b[i];
   }
 }
