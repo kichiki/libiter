@@ -6,12 +6,13 @@
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
  * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: orthomin.c,v 1.1 1999/05/11 20:13:20 ichiki Exp $
+ * $Id: orthomin.c,v 1.2 1999/05/14 23:11:26 ichiki Exp $
  */
 
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
+#include "../myroutines.h" /* mydmalloc() */
 
 #include "orthomin.h"
 
@@ -65,42 +66,12 @@ otmk (int m, double *b, double *x,
 
 
   /* allocation of matrices */
-  r = (double *)malloc (sizeof (double) * m);
-  if (r == NULL)
-    {
-      fprintf (stderr, "cannot allocate r[%d]\n", m);
-      exit (1);
-    }
-  p = (double *)malloc (sizeof (double) * m * (kres + 1));
-  if (p == NULL)
-    {
-      fprintf (stderr, "cannot allocate p[%d]\n", m * (kres + 1));
-      exit (1);
-    }
-  ap = (double *)malloc (sizeof (double) * m * (kres + 1));
-  if (ap == NULL)
-    {
-      fprintf (stderr, "cannot allocate ap[%d]\n", m * (kres + 1));
-      exit (1);
-    }
-  beta = (double *)malloc (sizeof (double) * (kres + 1));
-  if (beta == NULL)
-    {
-      fprintf (stderr, "cannot allocate beta[%d]\n", (kres + 1));
-      exit (1);
-    }
-  pap = (double *)malloc (sizeof (double) * (kres + 1));
-  if (pap == NULL)
-    {
-      fprintf (stderr, "cannot allocate pap[%d]\n", (kres + 1));
-      exit (1);
-    }
-  tmp = (double *)malloc (sizeof (double) * m);
-  if (tmp == NULL)
-    {
-      fprintf (stderr, "cannot allocate tmp[%d]\n", m);
-      exit (1);
-    }
+  r    = mydmalloc (m, "r");
+  p    = mydmalloc (m * (kres + 1), "p");
+  ap   = mydmalloc (m * (kres + 1), "ap");
+  beta = mydmalloc ((kres + 1), "beta");
+  pap  = mydmalloc ((kres + 1), "pap");
+  tmp  = mydmalloc (m, "tmp");
 
   myatimes (m, x, tmp);
   for (i=0; i<m; i++) /* 110 */
