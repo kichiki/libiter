@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: gmres.c,v 1.11 2001/01/07 05:46:35 ichiki Exp $
+ * $Id: gmres.c,v 1.12 2001/02/05 06:30:12 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -10,10 +10,51 @@
 #include <stdlib.h> /* malloc (), free() */
 #include <stdio.h>
 #include <math.h>
-//#include "../myroutines.h" // my_d_malloc()
 #include "blas.h"
 
 #include "mygmres.h"
+
+static void
+back_sub (int m, int nn,
+	  double *r, double *g, double *y);
+
+
+/** global variables **/
+int GMRES_it_max;
+int GMRES_it_restart;
+double GMRES_eps;
+
+/* wrapper routine for mygmres_m ()
+ * INPUT
+ *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
+ *   b [n] : given vector
+ *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   (global) GMRES_it_max : max # iterations
+ *   (global) GMRES_it_restart : # iterations to restart
+ *   (global) GMRES_eps : the accuracy
+ * OUTPUT
+ *   x [n] : solution
+ */
+void
+solve_iter_gmres (int n,
+		  double *b, double *x,
+		  void (*atimes) (int, double *, double *))
+{
+  extern int GMRES_it_max;
+  extern int GMRES_it_restart;
+  extern double GMRES_eps;
+
+  double residual;
+  int iter;
+
+
+  mygmres_m (n, b, x,
+	     GMRES_it_restart,
+	     GMRES_eps, GMRES_it_max, &iter, &residual,
+	     atimes);
+
+  fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
+}
 
 void
 mygmres_m (int n, double *f, double *x,
@@ -257,7 +298,7 @@ mygmres (int n, double *f, double *x,
   free (s);
 }
 
-void
+static void
 back_sub (int m, int nn,
 	  double *r, double *g, double *y)
 /* m  : number of iteration */
