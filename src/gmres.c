@@ -1,6 +1,6 @@
 /* generalized minimum residual method
- * Copyright (C) 1998,1999 Kengo ICHIKI <kengo@caltech.edu>
- * $Id: gmres.c,v 1.10 2000/06/27 07:23:54 ichiki Exp $
+ * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
+ * $Id: gmres.c,v 1.11 2001/01/07 05:46:35 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -10,7 +10,7 @@
 #include <stdlib.h> /* malloc (), free() */
 #include <stdio.h>
 #include <math.h>
-#include "../myroutines.h" /* my_d_malloc() */
+//#include "../myroutines.h" // my_d_malloc()
 #include "blas.h"
 
 #include "mygmres.h"
@@ -32,12 +32,28 @@ mygmres_m (int n, double *f, double *x,
   double *tmp, *v, *h, *g, *c, *s;
 
 
-  tmp = my_d_malloc (n, "tmp");
+  /*tmp = my_d_malloc (n, "tmp");
   v   = my_d_malloc ((m + 1) * n, "v");
   h   = my_d_malloc (m * m, "h");
   g   = my_d_malloc (m + 1, "g");
   c   = my_d_malloc (m, "c");
-  s   = my_d_malloc (m, "s");
+  s   = my_d_malloc (m, "s");*/
+  tmp = (double *) malloc (sizeof (double) * n);
+  v   = (double *) malloc (sizeof (double) * (m + 1) * n);
+  h   = (double *) malloc (sizeof (double) * m * m);
+  g   = (double *) malloc (sizeof (double) * m + 1);
+  c   = (double *) malloc (sizeof (double) * m);
+  s   = (double *) malloc (sizeof (double) * m);
+  if (tmp == NULL
+      || v == NULL
+      || h == NULL
+      || g == NULL
+      || c == NULL
+      || s == NULL)
+    {
+      fprintf (stderr, "malloc in mygmres_m ()");
+      exit (1);
+    }
 
   *iter = 0;
   /* 1. start: */
@@ -144,12 +160,28 @@ mygmres (int n, double *f, double *x,
 
   m = itmax;
 
-  tmp = my_d_malloc (n, "tmp");
+  /*tmp = my_d_malloc (n, "tmp");
   v   = my_d_malloc ((m + 1) * n, "v");
   h   = my_d_malloc (m * m, "h");
   g   = my_d_malloc (m + 1, "g");
   c   = my_d_malloc (m, "c");
-  s   = my_d_malloc (m, "s");
+  s   = my_d_malloc (m, "s");*/
+  tmp = (double *) malloc (sizeof (double) * n);
+  v   = (double *) malloc (sizeof (double) * (m + 1) * n);
+  h   = (double *) malloc (sizeof (double) * m * m);
+  g   = (double *) malloc (sizeof (double) * m + 1);
+  c   = (double *) malloc (sizeof (double) * m);
+  s   = (double *) malloc (sizeof (double) * m);
+  if (tmp == NULL
+      || v == NULL
+      || h == NULL
+      || g == NULL
+      || c == NULL
+      || s == NULL)
+    {
+      fprintf (stderr, "malloc in mygmres ()");
+      exit (1);
+    }
 
 
   /* 1. start: */

@@ -6,13 +6,13 @@
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
  * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: orthomin.c,v 1.4 1999/06/09 17:37:16 ichiki Exp $
+ * $Id: orthomin.c,v 1.5 2001/01/07 05:48:02 ichiki Exp $
  */
 
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
-#include "myroutines.h" /* my_d_malloc() */
+//#include "../myroutines.h" // my_d_malloc()
 
 #include "orthomin.h"
 
@@ -25,7 +25,7 @@
  *   b[m] : r-h-s vector
  *   eps : log10 of cutoff
  *   hnor : log10 of norm of b[]
- *   myatimes (int m, double *x, double b) : calc matrix-vector product
+ *   myatimes (int m, double *x, double *b) : calc matrix-vector product
  * OUTPUT
  *   x[m] : solution
  *   *iter : # of iteration
@@ -60,13 +60,30 @@ otmk (int m, double *b, double *x,
   double *tmp; /* tmp[m] */
 
 
-  /* allocation of matrices */
+  /* allocation of matrices
   r    = my_d_malloc (m, "r");
   p    = my_d_malloc (m * (kres + 1), "p");
   ap   = my_d_malloc (m * (kres + 1), "ap");
   beta = my_d_malloc ((kres + 1), "beta");
   pap  = my_d_malloc ((kres + 1), "pap");
-  tmp  = my_d_malloc (m, "tmp");
+  tmp  = my_d_malloc (m, "tmp"); */
+  r    = (double *) malloc (sizeof (double) * m);
+  p    = (double *) malloc (sizeof (double) * m * (kres + 1));
+  ap   = (double *) malloc (sizeof (double) * m * (kres + 1));
+  beta = (double *) malloc (sizeof (double) * (kres + 1));
+  pap  = (double *) malloc (sizeof (double) * (kres + 1));
+  tmp  = (double *) malloc (sizeof (double) * m);
+  if (r == NULL
+      || p == NULL
+      || ap == NULL
+      || beta == NULL
+      || pap == NULL
+      || tmp == NULL)
+    {
+      fprintf (stderr, "malloc in otmk ()");
+      exit (1);
+    }
+
 
   myatimes (m, x, tmp);
   for (i=0; i<m; i++) /* 110 */

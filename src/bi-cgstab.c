@@ -8,13 +8,13 @@
  *
  * translated from fortran into C
  *   by Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 1.2 2000/12/18 09:16:17 ichiki Exp $
+ * $Id: bi-cgstab.c,v 1.3 2001/01/07 05:47:19 ichiki Exp $
  */
 
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
-#include "../myroutines.h" /* my_d_malloc() */
+//#include "../myroutines.h" // my_d_malloc()
 
 #include "bi-cgstab.h"
 
@@ -61,13 +61,28 @@ sta (int m, double *b, double *x, int kend,
   double *tmp;
 
 
-  r0 = my_d_malloc (m, "r0");
+  /*r0 = my_d_malloc (m, "r0");
   p  = my_d_malloc (m, "p");
   q  = my_d_malloc (m, "q");
   t  = my_d_malloc (m, "t");
   r  = my_d_malloc (m, "r");
-  tmp= my_d_malloc (m, "tmp");
-
+  tmp= my_d_malloc (m, "tmp");*/
+  r0  = (double *) malloc (sizeof (double) * m);
+  p   = (double *) malloc (sizeof (double) * m);
+  q   = (double *) malloc (sizeof (double) * m);
+  t   = (double *) malloc (sizeof (double) * m);
+  r   = (double *) malloc (sizeof (double) * m);
+  tmp = (double *) malloc (sizeof (double) * m);
+  if (r0 == NULL
+      || p == NULL
+      || q == NULL
+      || t == NULL
+      || r == NULL
+      || tmp == NULL)
+    {
+      fprintf (stderr, "malloc in sta ()");
+      exit (1);
+    }
 
   beta  = 0.0;
   omega = 0.0;
@@ -195,7 +210,7 @@ st2 (int m, double *b, double *x, int kend,
   double *tmp;
 
 
-  r0  = my_d_malloc (m, "r0");
+  /*r0  = my_d_malloc (m, "r0");
   w   = my_d_malloc (m, "w");
   q   = my_d_malloc (m, "q");
   u   = my_d_malloc (m, "u");
@@ -203,8 +218,29 @@ st2 (int m, double *b, double *x, int kend,
   y   = my_d_malloc (m, "y");
   r   = my_d_malloc (m, "r");
   p   = my_d_malloc (m, "p");
-  tmp = my_d_malloc (m, "tmp");
-
+  tmp = my_d_malloc (m, "tmp");*/
+  r0  = (double *) malloc (sizeof (double) * m);
+  w   = (double *) malloc (sizeof (double) * m);
+  q   = (double *) malloc (sizeof (double) * m);
+  u   = (double *) malloc (sizeof (double) * m);
+  z   = (double *) malloc (sizeof (double) * m);
+  y   = (double *) malloc (sizeof (double) * m);
+  r   = (double *) malloc (sizeof (double) * m);
+  p   = (double *) malloc (sizeof (double) * m);
+  tmp = (double *) malloc (sizeof (double) * m);
+  if (r0 == NULL
+      || w == NULL
+      || q == NULL
+      || u == NULL
+      || z == NULL
+      || y == NULL
+      || r == NULL
+      || p == NULL
+      || tmp == NULL)
+    {
+      fprintf (stderr, "malloc in st2 ()");
+      exit (1);
+    }
 
   beta = 0.0;
   rho0 = 0.0;
@@ -361,7 +397,7 @@ gpb (int m, double *b, double *x, int kend,
   double *tmp;
 
 
-  r0 = my_d_malloc (m, "r0");
+  /*r0 = my_d_malloc (m, "r0");
   w  = my_d_malloc (m, "w");
   q  = my_d_malloc (m, "q");
   u  = my_d_malloc (m, "u");
@@ -369,8 +405,29 @@ gpb (int m, double *b, double *x, int kend,
   y  = my_d_malloc (m, "y");
   r  = my_d_malloc (m, "r");
   p  = my_d_malloc (m, "p");
-  tmp= my_d_malloc (m, "tmp");
-
+  tmp= my_d_malloc (m, "tmp");*/
+  r0  = (double *) malloc (sizeof (double) * m);
+  w   = (double *) malloc (sizeof (double) * m);
+  q   = (double *) malloc (sizeof (double) * m);
+  u   = (double *) malloc (sizeof (double) * m);
+  z   = (double *) malloc (sizeof (double) * m);
+  y   = (double *) malloc (sizeof (double) * m);
+  r   = (double *) malloc (sizeof (double) * m);
+  p   = (double *) malloc (sizeof (double) * m);
+  tmp = (double *) malloc (sizeof (double) * m);
+  if (r0 == NULL
+      || w == NULL
+      || q == NULL
+      || u == NULL
+      || z == NULL
+      || y == NULL
+      || r == NULL
+      || p == NULL
+      || tmp == NULL)
+    {
+      fprintf (stderr, "malloc in gpb ()");
+      exit (1);
+    }
 
   beta = 0.0;
   rho0 = 0.0;
@@ -398,8 +455,8 @@ gpb (int m, double *b, double *x, int kend,
           u [i] = y [i] + beta * u [i];
 	}/* 210 */
       (*hg) = log10 (hal) / 2.0 - hnor;
-      /* for check
-      fprintf (stdout, "#GPB %d %e\n", (* iter), (* hg)); */
+      /* for check */
+      fprintf (stdout, "#GPB %d %e\n", (* iter), (* hg));
 
       if((*hg) <= eps) goto end_gpb;
       pap = 0.0;
