@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: libiter.h,v 1.4 2001/01/29 09:38:40 ichiki Exp $
+ * $Id: libiter.h,v 1.5 2001/02/01 07:38:00 ichiki Exp $
  */
 
 /* from blas.h */
@@ -68,6 +68,11 @@ gpb (int m, double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
      void (*myatimes) (int, double *, double *));
+void
+gpb_chk (int m, double *b, double *x, int kend,
+	 double eps, double hnor,
+	 int *iter, double *hg,
+	 void (*myatimes) (int, double *, double *));
 
 /* from orthomin.h */
 void
