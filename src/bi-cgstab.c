@@ -1,6 +1,6 @@
 /* wrapper for solver routines here
  * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 1.5 2001/01/29 08:37:38 ichiki Exp $
+ * $Id: bi-cgstab.c,v 1.6 2001/02/01 07:36:47 ichiki Exp $
  *
  * (solver routines themselves are originally written by martin h. gutknecht)
  */
@@ -506,8 +506,8 @@ gpb (int m, double *b, double *x, int kend,
           u [i] = y [i] + beta * u [i];
 	}/* 210 */
       (*hg) = log10 (hal) / 2.0 - hnor;
-      /* for check */
-      fprintf (stdout, "#GPB %d %e\n", (* iter), (* hg));
+      /* for check
+      fprintf (stdout, "#GPB %d %e\n", (* iter), (* hg)); */
 
       if((*hg) <= eps) goto end_gpb;
       pap = 0.0;
@@ -578,6 +578,172 @@ gpb (int m, double *b, double *x, int kend,
     }/* 10 */
 
 end_gpb:
+  free (r0);
+  free (w);
+  free (q);
+  free (u);
+  free (z);
+  free (y);
+  free (r);
+  free (p);
+  free (tmp);
+}
+
+/* gpbi-cg method with check (printing residual in iterations)
+ */
+void
+gpb_chk (int m, double *b, double *x, int kend,
+	 double eps, double hnor,
+	 int *iter, double *hg,
+	 void (*myatimes) (int, double *, double *))
+{
+  int i;
+
+  double tbs;
+
+  double alpha;
+  double beta;
+  double eta;
+  double zeta;
+
+  double rho0;
+  double rho1;
+
+  double *r0, *w, *q, *u, *z, *y;
+  double *r, *p;
+
+  double taa, tbb, tcc, tdd, tee;
+
+  double hal;
+
+  double pap;
+
+
+  /* for myatimes () */
+  double *tmp;
+
+
+  r0  = (double *) malloc (sizeof (double) * m);
+  w   = (double *) malloc (sizeof (double) * m);
+  q   = (double *) malloc (sizeof (double) * m);
+  u   = (double *) malloc (sizeof (double) * m);
+  z   = (double *) malloc (sizeof (double) * m);
+  y   = (double *) malloc (sizeof (double) * m);
+  r   = (double *) malloc (sizeof (double) * m);
+  p   = (double *) malloc (sizeof (double) * m);
+  tmp = (double *) malloc (sizeof (double) * m);
+  if (r0 == NULL
+      || w == NULL
+      || q == NULL
+      || u == NULL
+      || z == NULL
+      || y == NULL
+      || r == NULL
+      || p == NULL
+      || tmp == NULL)
+    {
+      fprintf (stderr, "malloc in gpb ()");
+      exit (1);
+    }
+
+  beta = 0.0;
+  rho0 = 0.0;
+  myatimes (m, x, tmp);
+  for (i=0; i<m; i++) /* 100 */
+    {
+      tbs = b [i] - tmp [i];
+      r0 [i] =  tbs;
+      r [i] =  tbs;
+      y [i] = -tbs;
+      p [i] =  0.0;
+      u [i] =  0.0;
+      /* my correction (maybe we should do this) */
+      w [i] =  0.0;
+      rho0 +=  tbs * tbs;
+    }/* 100 */
+  for ((*iter) = 0; (*iter)<= kend; (*iter)++) /* 10 */
+    {
+      /* call resd(66,kk) */
+      hal  = 0.0;
+      for (i=0; i<m; i++) /* 210 */
+	{
+          hal += r [i] * r [i];
+          p [i] = r [i] + beta * (p [i] - u [i]);
+          u [i] = y [i] + beta * u [i];
+	}/* 210 */
+      (*hg) = log10 (hal) / 2.0 - hnor;
+      /* for check */
+      fprintf (stdout, "#GPB %d %e\n", (* iter), (* hg));
+
+      if((*hg) <= eps) goto end_gpb_chk;
+      pap = 0.0;
+      myatimes (m, p, tmp); /* p [] -> pn */
+      for (i=0; i<m; i++) /* 220 */
+	{
+	  tbs = tmp [i];
+          pap += r0 [i] * tbs;
+          q [i] = tbs; /* q [] -> A pn */
+	}/* 220 */
+      alpha = rho0 / pap;
+      /* write(76,*) kk, ' alpha = ', alpha */
+      for (i=0; i<m; i++) /* 230 */
+	{
+          tbs  = alpha * q [i];
+          y [i] += tbs - alpha * w [i];
+          r [i] -= tbs;
+          x [i] += alpha * p [i];
+	}/* 230 */
+      myatimes (m, r, w); /* w [] -> wn = A tn , tn <- r [] */
+      /* 240 */
+      taa = 0.0; /* taa -> (A tn, A tn) */
+      tbb = 0.0; /* tbb -> (  yn,   yn) */
+      tcc = 0.0; /* tcc -> (A tn,   yn) */
+      tdd = 0.0; /* tdd -> (A tn,   tn) */
+      tee = 0.0; /* tee -> (  yn,   tn) */
+      for (i=0; i<m; i++) /* 250 */
+	{
+          taa += w [i] * w [i];
+          tbb += y [i] * y [i];
+          tcc += w [i] * y [i];
+          tdd += w [i] * r [i];
+          tee += y [i] * r [i];
+	}/* 250 */
+      if ((*iter) == 0)
+	{
+	  zeta = tdd / taa;
+	  eta  = 0.0;
+        }
+      else
+	{
+	  zeta = (tbb * tdd - tcc * tee) / (taa * tbb - tcc * tcc);
+	  eta  = (taa * tee - tdd * tcc) / (taa * tbb - tcc * tcc);
+	}
+      /* 500 */
+      rho1 = 0.0; /* rho1 -> (r*0, rn+1) */
+      for (i=0; i<m; i++) /* 260 */
+	{
+          tbs  = zeta * r [i] + eta * (z [i] - alpha * u [i]);
+          z [i] = tbs;
+          x [i] += tbs;
+	}/* 260 */
+      for (i=0; i<m; i++) /* 270 */
+	{
+          tbs  = eta * y [i] + zeta * w [i];
+          y [i] = tbs;
+          r [i] -= tbs;
+          u [i] = zeta * q [i] + eta * u [i];
+          rho1 += r0 [i] * r [i];
+	}/* 270 */
+      beta = (rho1 / rho0) * (alpha / zeta);
+      rho0 = rho1;
+      /* write(76,*) kk, ' beta = ', beta */
+      for (i=0; i<m; i++) /* 280 */
+	{
+          w [i] += beta * q [i]; /* wn += beta A pn */
+	}/* 280 */
+    }/* 10 */
+
+end_gpb_chk:
   free (r0);
   free (w);
   free (q);
