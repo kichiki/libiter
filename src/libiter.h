@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: libiter.h,v 1.5 2001/02/01 07:38:00 ichiki Exp $
+ * $Id: libiter.h,v 1.6 2001/02/05 06:32:25 ichiki Exp $
  */
 
 /* from blas.h */
@@ -25,6 +25,14 @@ dscalz (int n, double da, double *dx, int incx,
 	double *dz, int incz);
 
 /* from mygmres.h */
+extern int GMRES_it_max;
+extern int GMRES_it_restart;
+extern double GMRES_eps;
+
+void
+solve_iter_gmres (int n,
+		  double *b, double *x,
+		  void (*atimes) (int, double *, double *));
 void
 mygmres_m (int n, double *f, double *x,
 	   int m, double tol, int itmax,
@@ -35,9 +43,6 @@ mygmres (int n, double *f, double *x,
 	 double tol, int itmax,
 	 int *iter, double *err,
 	 void (*myatimes) (int, double *, double *));
-void
-back_sub (int m, int nn,
-	  double *r, double *g, double *y);
 
 /* from bi-cgstab.h */
 /** global variables **/
