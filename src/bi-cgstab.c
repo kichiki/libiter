@@ -1,6 +1,6 @@
 /* wrapper for solver routines here
  * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 1.4 2001/01/24 07:26:41 ichiki Exp $
+ * $Id: bi-cgstab.c,v 1.5 2001/01/29 08:37:38 ichiki Exp $
  *
  * (solver routines themselves are originally written by martin h. gutknecht)
  */
@@ -10,14 +10,19 @@
 
 #include "bi-cgstab.h"
 
+
+/** global variables **/
+int STAB_it_max;
+double STAB_log10_eps;
+
 /* wrapper routine for solvers below
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
  *   atimes (n, x, b) : routine to calc A.x and return b[]
  *   solver : solver routine to call
- *   it_max : max # iterations
- *   log10_eps : log10(eps), where eps is the accuracy
+ *   (global) STAB_it_max : max # iterations
+ *   (global) STAB_log10_eps : log10(eps), where eps is the accuracy
  * OUTPUT
  *   x [n] : solution
  */
@@ -27,9 +32,11 @@ solve_iter_stab (int n,
 		 void (*atimes) (int, double *, double *),
 		 void (*solver) (int, double *, double *, int,
 				 double, double, int *, double *,
-				 void (*) (int, double *, double *)),
-		 int it_max, double log10_eps)
+				 void (*) (int, double *, double *)))
 {
+  extern int STAB_it_max;
+  extern double STAB_log10_eps;
+
   int i;
 
   double hnor;
@@ -42,7 +49,10 @@ solve_iter_stab (int n,
     hnor += b [i] * b [i];
   if (hnor != 0.0)
     hnor = log10 (hnor) / 2.0;
-  solver (n, b, x, it_max, log10_eps, hnor, &iter, &residual, atimes);
+
+  solver (n, b, x,
+	  STAB_it_max, STAB_log10_eps,
+	  hnor, &iter, &residual, atimes);
 
   fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
