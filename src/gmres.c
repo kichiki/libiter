@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: gmres.c,v 1.12 2001/02/05 06:30:12 ichiki Exp $
+ * $Id: gmres.c,v 2.1 2001/10/13 12:12:55 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -19,39 +19,33 @@ back_sub (int m, int nn,
 	  double *r, double *g, double *y);
 
 
-/** global variables **/
-int GMRES_it_max;
-int GMRES_it_restart;
-double GMRES_eps;
-
 /* wrapper routine for mygmres_m ()
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
  *   atimes (n, x, b) : routine to calc A.x and return b[]
- *   (global) GMRES_it_max : max # iterations
- *   (global) GMRES_it_restart : # iterations to restart
- *   (global) GMRES_eps : the accuracy
+ *   it_max : max # iterations
+ *   it_restart : # iterations to restart
+ *   eps : the accuracy
  * OUTPUT
  *   x [n] : solution
  */
 void
 solve_iter_gmres (int n,
 		  double *b, double *x,
-		  void (*atimes) (int, double *, double *))
+		  void (*atimes) (int, double *, double *, void *),
+		  void * user_data,
+		  int it_max, int it_restart, double eps)
 {
-  extern int GMRES_it_max;
-  extern int GMRES_it_restart;
-  extern double GMRES_eps;
-
   double residual;
   int iter;
 
 
   mygmres_m (n, b, x,
-	     GMRES_it_restart,
-	     GMRES_eps, GMRES_it_max, &iter, &residual,
-	     atimes);
+	     it_restart, eps, it_max,
+	     &iter, &residual,
+	     atimes,
+	     user_data);
 
   fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
@@ -60,7 +54,8 @@ void
 mygmres_m (int n, double *f, double *x,
 	   int m, double tol, int itmax,
 	   int *iter, double *err,
-	   void (*myatimes) (int, double *, double *))
+	   void (*myatimes) (int, double *, double *, void *),
+	   void * user_data)
 {
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
@@ -99,7 +94,7 @@ mygmres_m (int n, double *f, double *x,
   *iter = 0;
   /* 1. start: */
   /* compute r0 */
-  myatimes (n, x, tmp);
+  myatimes (n, x, tmp, user_data);
   daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
   /* compute v1 */
   /* beta */
@@ -114,7 +109,7 @@ mygmres_m (int n, double *f, double *x,
       for (j=0; j<m; j++)
 	{
 	  /* tmp = A.vj */
-	  myatimes (n, &v [j * n], tmp);
+	  myatimes (n, &v [j * n], tmp, user_data);
 	  /* h_i,j (i=1,...,j) */
 	  for (i=0; i<=j; i++)
 	    h [i * m + j] = ddot (n, tmp, 1, & v [i * n], 1);
@@ -164,7 +159,7 @@ mygmres_m (int n, double *f, double *x,
       /* else */
       /* compute r_m */
       /* tmp = A.x_m */
-      myatimes (n, x, tmp);
+      myatimes (n, x, tmp, user_data);
       /* r_m */
       daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
       /* compute v1 */
@@ -187,7 +182,8 @@ void
 mygmres (int n, double *f, double *x,
 	 double tol, int itmax,
 	 int *iter, double *err,
-	 void (*myatimes) (int, double *, double *))
+	 void (*myatimes) (int, double *, double *, void *),
+	 void * user_data)
 {
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
@@ -227,7 +223,7 @@ mygmres (int n, double *f, double *x,
 
   /* 1. start: */
   /* compute r0 */
-  myatimes (n, x, tmp);
+  myatimes (n, x, tmp, user_data);
   daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
   /* compute v1 */
   g [0] = dnrm2 (n, tmp, 1); /* beta */
@@ -238,7 +234,7 @@ mygmres (int n, double *f, double *x,
   for (j=0; j<m; j++)
     {
       /* tmp = A.vj */
-      myatimes (n, &v [j * n], tmp);
+      myatimes (n, &v [j * n], tmp, user_data);
       /* h_i,j (i=1,...,j) */
       for (i=0; i<=j; i++)
 	h [i * m + j] = ddot (n, tmp, 1, &v [i * n], 1);
