@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: libiter.h,v 1.1 2001/01/07 05:50:15 ichiki Exp $
+ * $Id: libiter.h,v 1.2 2001/01/24 07:27:40 ichiki Exp $
  */
 
 /* from blas.h */
@@ -40,6 +40,15 @@ back_sub (int m, int nn,
 	  double *r, double *g, double *y);
 
 /* from bi-cgstab.h */
+void
+solve_iter_stab (int n,
+		 double *b, double *x,
+		 void (*atimes) (int, double *, double *),
+		 void (*solver) (int, double *, double *, int,
+				 double, double, int *, double *,
+				 void (*) (int, double *, double *)),
+		 int it_max, double log10_eps);
+
 void
 sta (int m, double *b, double *x, int kend,
      double eps, double hnor,
