@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: gmres.c,v 2.1 2001/10/13 12:12:55 ichiki Exp $
+ * $Id: gmres.c,v 2.2 2001/10/13 23:02:36 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -53,7 +53,7 @@ solve_iter_gmres (int n,
 void
 mygmres_m (int n, double *f, double *x,
 	   int m, double tol, int itmax,
-	   int *iter, double *err,
+	   int *iter, double *res,
 	   void (*myatimes) (int, double *, double *, void *),
 	   void * user_data)
 {
@@ -68,12 +68,6 @@ mygmres_m (int n, double *f, double *x,
   double *tmp, *v, *h, *g, *c, *s;
 
 
-  /*tmp = my_d_malloc (n, "tmp");
-  v   = my_d_malloc ((m + 1) * n, "v");
-  h   = my_d_malloc (m * m, "h");
-  g   = my_d_malloc (m + 1, "g");
-  c   = my_d_malloc (m, "c");
-  s   = my_d_malloc (m, "s");*/
   tmp = (double *) malloc (sizeof (double) * n);
   v   = (double *) malloc (sizeof (double) * (m + 1) * n);
   h   = (double *) malloc (sizeof (double) * m * m);
@@ -91,7 +85,7 @@ mygmres_m (int n, double *f, double *x,
       exit (1);
     }
 
-  *iter = 0;
+  (*iter) = 0;
   /* 1. start: */
   /* compute r0 */
   myatimes (n, x, tmp, user_data);
@@ -102,7 +96,7 @@ mygmres_m (int n, double *f, double *x,
   dscalz (n, 1.0 / g [0], tmp, 1, & v [0], 1);
 
   /* main loop */
-  while (*iter <= itmax)
+  while ((*iter) <= itmax)
     {
       ++(*iter);
       /* 2. iterate: */
@@ -152,10 +146,10 @@ mygmres_m (int n, double *f, double *x,
 	  x [i] += v [k * n + i] * c [k];
 
       /* 4. restart */
-      *err = fabs (g [m]); /* residual */
+      (*res) = fabs (g [m]); /* residual */
       /*fprintf (stderr, "# iter %d res %e\n", *iter, *err);*/
       /* if satisfied, */
-      if (*err <= tol) break;
+      if ((*res) <= tol) break;
       /* else */
       /* compute r_m */
       /* tmp = A.x_m */
@@ -181,7 +175,7 @@ mygmres_m (int n, double *f, double *x,
 void
 mygmres (int n, double *f, double *x,
 	 double tol, int itmax,
-	 int *iter, double *err,
+	 int *iter, double *res,
 	 void (*myatimes) (int, double *, double *, void *),
 	 void * user_data)
 {
@@ -197,12 +191,6 @@ mygmres (int n, double *f, double *x,
 
   m = itmax;
 
-  /*tmp = my_d_malloc (n, "tmp");
-  v   = my_d_malloc ((m + 1) * n, "v");
-  h   = my_d_malloc (m * m, "h");
-  g   = my_d_malloc (m + 1, "g");
-  c   = my_d_malloc (m, "c");
-  s   = my_d_malloc (m, "s");*/
   tmp = (double *) malloc (sizeof (double) * n);
   v   = (double *) malloc (sizeof (double) * (m + 1) * n);
   h   = (double *) malloc (sizeof (double) * m * m);
@@ -226,7 +214,8 @@ mygmres (int n, double *f, double *x,
   myatimes (n, x, tmp, user_data);
   daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
   /* compute v1 */
-  g [0] = dnrm2 (n, tmp, 1); /* beta */
+  /* beta */
+  g [0] = dnrm2 (n, tmp, 1);
   dscalz (n, 1.0 / g [0], tmp, 1, & v [0], 1);
 
   /* main loop */
@@ -268,15 +257,15 @@ mygmres (int n, double *f, double *x,
       g [j    ] = c [j] * g0;
       g [j + 1] = s [j] * g0;
 
-      *err = fabs (g [j + 1]); /* residual */
+      (*res) = fabs (g [j + 1]); /* residual */
       /* if satisfied, */
-      if (*err <= tol)
+      if ((*res) <= tol)
 	{
 	  j ++; /* this is because ++(*iter) in gmres(m) */
 	  break;
 	}
     }
-  *iter = j;
+  (*iter) = j;
 
   /* 3. form the approximate solution */
   /* solve y_k */
