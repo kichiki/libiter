@@ -1,3 +1,53 @@
+/* wrapper for solver routines here
+ * Copyright (C) 2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
+ * $Id: bi-cgstab.c,v 1.4 2001/01/24 07:26:41 ichiki Exp $
+ *
+ * (solver routines themselves are originally written by martin h. gutknecht)
+ */
+#include <stdio.h> /* fprintf() */
+#include <math.h> /* log10() */
+#include <stdlib.h> /* malloc(), free() */
+
+#include "bi-cgstab.h"
+
+/* wrapper routine for solvers below
+ * INPUT
+ *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
+ *   b [n] : given vector
+ *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   solver : solver routine to call
+ *   it_max : max # iterations
+ *   log10_eps : log10(eps), where eps is the accuracy
+ * OUTPUT
+ *   x [n] : solution
+ */
+void
+solve_iter_stab (int n,
+		 double *b, double *x,
+		 void (*atimes) (int, double *, double *),
+		 void (*solver) (int, double *, double *, int,
+				 double, double, int *, double *,
+				 void (*) (int, double *, double *)),
+		 int it_max, double log10_eps)
+{
+  int i;
+
+  double hnor;
+  double residual;
+  int iter;
+
+
+  hnor = 0.0;
+  for (i = 0; i < n; ++i)
+    hnor += b [i] * b [i];
+  if (hnor != 0.0)
+    hnor = log10 (hnor) / 2.0;
+  solver (n, b, x, it_max, log10_eps, hnor, &iter, &residual, atimes);
+
+  fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
+}
+
+
 /*             ===============rog.f==============
  *             problem given by martin h. gutknecht
  *             numerical method: bi-cgsta        method -- sta ()
@@ -8,16 +58,7 @@
  *
  * translated from fortran into C
  *   by Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 1.3 2001/01/07 05:47:19 ichiki Exp $
  */
-
-#include <stdio.h> /* fprintf() */
-#include <math.h> /* log10() */
-#include <stdlib.h> /* malloc(), free() */
-//#include "../myroutines.h" // my_d_malloc()
-
-#include "bi-cgstab.h"
-
 
 /* bi-cgstab method
  *   m : dimension of the problem
