@@ -1,10 +1,13 @@
 /**************************************************************
- $Id: gmres.c,v 1.2 1998/06/20 19:18:45 ichiki Exp $
+ $Id: gmres.c,v 1.3 1998/06/20 22:31:02 ichiki Exp $
  GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
  vol7(1986) pp.856-869
  implemented by Kengo Ichiki @ Caltech
 
  $Log: gmres.c,v $
+ Revision 1.3  1998/06/20 22:31:02  ichiki
+ now debuging!
+
  Revision 1.2  1998/06/20 19:18:45  ichiki
  make portable subroutine 'myatimes', which multiply vector to matrix.
 
@@ -37,50 +40,37 @@ void mygmres(unsigned long n, double f[], double x[],
   unsigned long
     i,j,k;
   double
-    beta,
     hv,
-    hjoj,
     rr,hh,
-    cj,sj,
+    r1,r2,
     g0,
-    *tmp,*v,*h,*r,*g;
+    *tmp,*v,*h,*g,*c,*s;
 
   tmp = dvector(0,n-1);
   v   = dvector(0,n*(m+1)-1);
   h   = dvector(0,m*m-1);
-  r   = dvector(0,m-1);
   g   = dvector(0,m);
+  c   = dvector(0,m-1);
+  s   = dvector(0,m-1);
 
   /* 1. start: */
   /* compute r0 */
-  /* tmp = A.x0
-  for(i=0;i<n;i++){
-    tmp[i]= 0.0;
-    for(k=0;k<n;k++){
-      tmp[i]+= a[i*n+k]*x[k];
-    }
-  } */
+  /* tmp = A.x0 */
   myatimes(n,x,tmp);
   for(i=0;i<n;i++){
     tmp[i] = f[i]-tmp[i]; /* r0 */
   }
   /* compute v1 */
-  beta = norm(n,tmp);
+  g[0] = norm(n,tmp); /* beta */
   for(i=0;i<n;i++){
-    v[0*n+i] = tmp[i]/beta;
+    v[0*n+i] = tmp[i]/g[0];
   }
   /* main loop */
   while( *iter <= itmax ){
     ++(*iter);
     /* 2. iterate: */
     for(j=0;j<m;j++){
-      /* tmp = A.vj
-      for(i=0;i<n;i++){
-	tmp[i] = 0.0;
-	for(k=0;k<n;k++){
-	  tmp[i]+= a[i*n+k]*v[j*n+k];
-	}
-      }*/
+      /* tmp = A.vj */
       myatimes(n,&v[j*n],tmp);
       /* h_i,j (i=1,...,j) */
       for(i=0;i<=j;i++){
@@ -95,38 +85,35 @@ void mygmres(unsigned long n, double f[], double x[],
 	tmp[k] = tmp[k]-hv; /* vv_j+1 */
       }
       /* h_j+1,j */
-      hjoj = norm(n,tmp); /* h_j+1,j */
+      hh = norm(n,tmp); /* h_j+1,j */
       /* v_j+1 */
       for(k=0;k<n;k++){
-	v[(j+1)*n+k] = tmp[k]/hjoj;
+	v[(j+1)*n+k] = tmp[k]/hh;
       }
       /* rotate */
-      rr = h[j*m+j];
-      hh = hjoj;
-      hv = sqrt(rr*rr+hh*hh); /* temporary variable */
-      cj =  rr/hv;
-      sj = -hh/hv;
-      r[j] = hv; /* diagonal element of R */
-      if(j == 0){
-	g[0] = cj*beta;
-	g[1] = sj*beta;
-      }else{
-	g0 = g[j];
-	g[j  ] = cj*g0;
-	g[j+1] = sj*g0;
+      for(i=0;i<j;i++){
+	r1 = h[ i   *m+j];
+	r2 = h[(i+1)*m+j];
+	h[ i   *m+j] = c[i]*r1-s[i]*r2;
+	h[(i+1)*m+j] = s[i]*r1+c[i]*r2;
       }
+      rr = h[j*m+j];
+      hv = sqrt(rr*rr+hh*hh); /* temporary variable */
+      c[j] =  rr/hv;
+      s[j] = -hh/hv;
+      h[j*m+j] = hv; /* resultant (after rotated) element */
+
+      g0 = g[j];
+      g[j  ] = c[j]*g0;
+      g[j+1] = s[j]*g0;
     }
     /* 3. form the approximate solution */
     /* solve y_k */
-    /* restore R matrix */
-    for(i=0;i<m;i++){
-      h[i*m+i] = r[i];
-    }
-    back_sub(m,h,g,r); /* use r[] as y_k */
+    back_sub(m,h,g,c); /* use c[] as y_k */
     /* x_m */
     for(i=0;i<n;i++){
       for(k=0;k<m;k++){
-	x[i] += v[k*n+i]*r[k];
+	x[i] += v[k*n+i]*c[k];
       }
     }
     /* 4. restart */
@@ -135,29 +122,24 @@ void mygmres(unsigned long n, double f[], double x[],
     if( *err <= tol ) break;
     /* else */
     /* compute r_m */
-    /* tmp = A.x_m
-    for(i=0;i<n;i++){
-      tmp[i]= 0.0;
-      for(k=0;k<n;k++){
-	tmp[i]+= a[i*n+k]*x[k];
-      }
-    }*/
+    /* tmp = A.x_m */
     myatimes(n,x,tmp);
     for(i=0;i<n;i++){
       tmp[i] = f[i]-tmp[i]; /* r0 */
     }
     /* compute v1 */
-    beta = norm(n,tmp);
+    g[0] = norm(n,tmp);
     for(i=0;i<n;i++){
-      v[0*n+i] = tmp[i]/beta;
+      v[0*n+i] = tmp[i]/g[0];
     }
   }
 
   free_dvector(tmp,0,n-1);
   free_dvector(v  ,0,n*m-1);
   free_dvector(h  ,0,m*m-1);
-  free_dvector(r  ,0,m*m-1);
   free_dvector(g  ,0,m);
+  free_dvector(c  ,0,m-1);
+  free_dvector(s  ,0,m-1);
 }
 
 
@@ -171,7 +153,7 @@ void back_sub(unsigned long m, double r[], double g[], double y[])
     j = m-1-jj;
     y[j] = 0.0;
     for(i=j+1;i<m;i++){
-      y[j]-=r[i*m+j]*y[i];
+      y[j]-=r[j*m+i]*y[i];
     }
     y[j]+=g[j];
     y[j]=y[j]/r[j*m+j];
