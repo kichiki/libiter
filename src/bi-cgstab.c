@@ -1,6 +1,6 @@
 /* wrapper for iterative solver routines
  * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 2.1 2001/10/13 11:47:03 ichiki Exp $
+ * $Id: bi-cgstab.c,v 2.2 2001/10/13 21:38:19 ichiki Exp $
  *
  * (solver routines themselves are originally written by martin h. gutknecht)
  */
@@ -15,7 +15,7 @@
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
- *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   atimes (n, x, b, user_data) : routine to calc A.x and return b[]
  *   user_data : pointer to be passed to solver and atimes routines
  *   solver : solver routine to call
  *   it_max : max # iterations
@@ -50,7 +50,8 @@ solve_iter_stab (int n,
 
   solver (n, b, x,
 	  it_max, log10_eps,
-	  hnor, &iter, &residual, atimes);
+	  hnor, &iter, &residual, atimes,
+	  user_data);
 
   fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
@@ -75,6 +76,7 @@ solve_iter_stab (int n,
  *   eps : log10 of cutoff
  *   hnor : log10 of norm of b []
  *   myatimes (int m, double *x, double *b) : calc matrix-vector product
+ *   user_data : pointer to be passed to atimes routines
  * OUTPUT
  *   x [m] : solution
  *   *iter : # of iteration
@@ -221,6 +223,7 @@ end_sta:
  *   eps : log10 of cutoff
  *   hnor : log10 of norm of b []
  *   myatimes (int m, double *x, double *b) : calc matrix-vector product
+ *   user_data : pointer to be passed to atimes routines
  * OUTPUT
  *   x [m] : solution
  *   *iter : # of iteration
@@ -565,6 +568,7 @@ end_st2_chk:
  *   eps : log10 of cutoff
  *   hnor : log10 of norm of b []
  *   myatimes (int m, double *x, double *b) : calc matrix-vector product
+ *   user_data : pointer to be passed to atimes routines
  * OUTPUT
  *   x [m] : solution
  *   *iter : # of iteration
