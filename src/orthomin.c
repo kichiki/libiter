@@ -6,13 +6,13 @@
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
  *
  * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: orthomin.c,v 1.2 1999/05/14 23:11:26 ichiki Exp $
+ * $Id: orthomin.c,v 1.3 1999/05/25 19:42:17 ichiki Exp $
  */
 
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
-#include "../myroutines.h" /* mydmalloc() */
+#include "myroutines.h" /* my_d_malloc() */
 
 #include "orthomin.h"
 
@@ -66,12 +66,12 @@ otmk (int m, double *b, double *x,
 
 
   /* allocation of matrices */
-  r    = mydmalloc (m, "r");
-  p    = mydmalloc (m * (kres + 1), "p");
-  ap   = mydmalloc (m * (kres + 1), "ap");
-  beta = mydmalloc ((kres + 1), "beta");
-  pap  = mydmalloc ((kres + 1), "pap");
-  tmp  = mydmalloc (m, "tmp");
+  r    = my_d_malloc (m, "r");
+  p    = my_d_malloc (m * (kres + 1), "p");
+  ap   = my_d_malloc (m * (kres + 1), "ap");
+  beta = my_d_malloc ((kres + 1), "beta");
+  pap  = my_d_malloc ((kres + 1), "pap");
+  tmp  = my_d_malloc (m, "tmp");
 
   myatimes (m, x, tmp);
   for (i=0; i<m; i++) /* 110 */
