@@ -1,6 +1,6 @@
 /* generalized minimum residual method
- * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: gmres.c,v 2.3 2001/10/19 14:29:14 ichiki Exp $
+ * Copyright (C) 1998-2003 Kengo Ichiki <ichiki@jhu.edu>
+ * $Id: gmres.c,v 2.4 2003/05/09 01:55:09 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -71,62 +71,57 @@ mygmres_m (int n, double *f, double *x,
   double rr, hh;
   double r1, r2;
   double g0;
-  double *tmp, *v, *h, *g, *c, *s;
+  double * v, * h, * g, * c, * s;
 
 
-  tmp = (double *) malloc (sizeof (double) * n);
   v   = (double *) malloc (sizeof (double) * (m + 1) * n);
   h   = (double *) malloc (sizeof (double) * m * m);
   g   = (double *) malloc (sizeof (double) * m + 1);
   c   = (double *) malloc (sizeof (double) * m);
   s   = (double *) malloc (sizeof (double) * m);
-  if (tmp == NULL
-      || v == NULL
-      || h == NULL
-      || g == NULL
-      || c == NULL
-      || s == NULL)
-    {
-      fprintf (stderr, "malloc in mygmres_m ()");
-      exit (1);
-    }
+
 
   (*iter) = 0;
   /* 1. start: */
   /* compute r0 */
-  myatimes (n, x, tmp, user_data);
-  daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
+  myatimes (n, x, v + 0, user_data); /* use v [0] temporaliry */
+  daxpyz (n, -1.0, v + 0, 1, f, 1, v + 0, 1);
   /* compute v1 */
   /* beta */
-  g [0] = dnrm2 (n, tmp, 1);
-  dscalz (n, 1.0 / g [0], tmp, 1, & v [0], 1);
+  g [0] = dnrm2 (n, v + 0, 1);
+  dscal (n, 1.0 / g [0], v + 0, 1);
 
   /* main loop */
   while ((*iter) <= itmax)
     {
       ++(*iter);
       /* 2. iterate: */
-      for (j=0; j<m; j++)
+      for (j = 0; j < m; j ++)
 	{
-	  /* tmp = A.vj */
-	  myatimes (n, &v [j * n], tmp, user_data);
+	  /* tmp = A.vj : use v [(j + 1) * n] directly */
+	  myatimes (n, v + j * n, v + (j + 1) * n, user_data);
 	  /* h_i,j (i=1,...,j) */
-	  for (i=0; i<=j; i++)
-	    h [i * m + j] = ddot (n, tmp, 1, & v [i * n], 1);
+	  for (i = 0; i <= j; i ++)
+	    {
+	      h [i * m + j] = ddot (n, v + (j + 1) * n, 1,
+				    v + i * n, 1);
+	    }
 	  /* vv_j+1 */
-	  for (k=0; k<n; k++)
+	  for (k = 0; k < n; k ++)
 	    {
 	      hv = 0.0;
-	      for (i=0; i<=j; i++)
-		hv += h [i * m + j] * v [i * n + k];
-	      tmp [k] -= hv;
+	      for (i = 0; i <= j; i ++)
+		{
+		  hv += h [i * m + j] * v [i * n + k];
+		}
+	      v [(j + 1) * n + k] -= hv;
 	    }
 	  /* h_j+1,j */
-	  hh = dnrm2 (n, tmp, 1);
+	  hh = dnrm2 (n, v + (j + 1) * n, 1);
 	  /* v_j+1 */
-	  dscalz (n, 1.0 / hh, tmp, 1, & v [(j + 1) * n], 1);
+	  dscal (n, 1.0 / hh, v + (j + 1) * n, 1);
 	  /* rotate */
-	  for (i=0; i<j; i++)
+	  for (i = 0; i < j; i ++)
 	    {
 	      r1 = h [ i      * m + j];
 	      r2 = h [(i + 1) * m + j];
@@ -145,32 +140,34 @@ mygmres_m (int n, double *f, double *x,
 	}
       /* 3. form the approximate solution */
       /* solve y_k */
-      back_sub (m, m, h, g, c); /* use c [] as y_k */
+      back_sub (j/*m*/, m, h, g, c); /* use c [] as y_k */
       /* x_m */
-      for (i=0; i<n; i++)
-	for (k=0; k<m; k++)
-	  x [i] += v [k * n + i] * c [k];
+      for (i = 0; i < n; i ++)
+	{
+	  for (k = 0; k < j/*m*/; k ++)
+	    {
+	      x [i] += v [k * n + i] * c [k];
+	    }
+	}
 
       /* 4. restart */
-      (*res) = fabs (g [m]); /* residual */
-      /*fprintf (stderr, "# iter %d res %e\n", *iter, *err);*/
+      (*res) = fabs (g [j/*m*/]); /* residual */
+      /*fprintf (stderr, "# iter %d res %e\n", *iter, *res);*/
       /* if satisfied, */
       if ((*res) <= tol) break;
       /* else */
       /* compute r_m */
-      /* tmp = A.x_m */
-      myatimes (n, x, tmp, user_data);
+      myatimes (n, x, v + 0, user_data);
       /* r_m */
-      daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
+      daxpyz (n, -1.0, v + 0, 1, f, 1, v + 0, 1);
       /* compute v1 */
-      g [0] = dnrm2 (n, tmp, 1);
-      dscalz (n, 1.0 / g [0], tmp, 1, & v [0], 1);
+      g [0] = dnrm2 (n, v + 0, 1);
+      dscal (n, 1.0 / g [0], v + 0, 1);
     }
 
   /* adjust iter */
   (*iter) *= m;
 
-  free (tmp);
   free (v);
   free (h);
   free (g);
@@ -192,61 +189,55 @@ mygmres (int n, double *f, double *x,
   double rr, hh;
   double r1, r2;
   double g0;
-  double *tmp, *v, *h, *g, *c, *s;
+  double * v, * h, * g, * c, * s;
 
 
   m = itmax;
 
-  tmp = (double *) malloc (sizeof (double) * n);
   v   = (double *) malloc (sizeof (double) * (m + 1) * n);
   h   = (double *) malloc (sizeof (double) * m * m);
   g   = (double *) malloc (sizeof (double) * m + 1);
   c   = (double *) malloc (sizeof (double) * m);
   s   = (double *) malloc (sizeof (double) * m);
-  if (tmp == NULL
-      || v == NULL
-      || h == NULL
-      || g == NULL
-      || c == NULL
-      || s == NULL)
-    {
-      fprintf (stderr, "malloc in mygmres ()");
-      exit (1);
-    }
 
 
   /* 1. start: */
   /* compute r0 */
-  myatimes (n, x, tmp, user_data);
-  daxpyz (n, -1.0, tmp, 1, f, 1, tmp, 1);
+  myatimes (n, x, v + 0, user_data); /* use v [0] temporaliry */
+  daxpyz (n, -1.0, v + 0, 1, f, 1, v + 0, 1);
   /* compute v1 */
   /* beta */
-  g [0] = dnrm2 (n, tmp, 1);
-  dscalz (n, 1.0 / g [0], tmp, 1, & v [0], 1);
+  g [0] = dnrm2 (n, v + 0, 1);
+  dscal (n, 1.0 / g [0], v + 0, 1);
 
   /* main loop */
   /* 2. iterate: */
-  for (j=0; j<m; j++)
+  for (j = 0; j < m; j ++)
     {
-      /* tmp = A.vj */
-      myatimes (n, &v [j * n], tmp, user_data);
+      /* tmp = A.vj : use v [(j + 1) * n] directly */
+      myatimes (n, v + j * n, v + (j + 1) * n, user_data);
       /* h_i,j (i=1,...,j) */
-      for (i=0; i<=j; i++)
-	h [i * m + j] = ddot (n, tmp, 1, &v [i * n], 1);
+      for (i = 0; i <= j; i ++)
+	{
+	  h [i * m + j] = ddot (n, v + (j + 1) * n, 1,
+				v + i * n, 1);
+	}
       /* vv_j+1 */
-      for (k=0; k<n; k++)
+      for (k = 0; k < n; k ++)
 	{
 	  hv = 0.0;
-	  for (i=0; i<=j; i++)
-	    hv += h [i * m + j] * v [i * n + k];
-	  tmp [k] -= hv;
+	  for (i = 0; i <= j; i ++)
+	    {
+	      hv += h [i * m + j] * v [i * n + k];
+	    }
+	  v [(j + 1) * n + k] -= hv;
 	}
       /* h_j+1,j */
-      hh = dnrm2 (n, tmp, 1);
+      hh = dnrm2 (n, v + (j + 1) * n, 1);
       /* v_j+1 */
-      dscalz (n, 1.0 / hh, tmp, 1, & v [(j + 1) * n], 1);
+      dscal (n, 1.0 / hh, v + (j + 1) * n, 1);
       /* rotate */
-      for (i=0; i<j; i++)
+      for (i = 0; i < j; i ++)
 	{
 	  r1 = h [ i      * m + j];
 	  r2 = h [(i + 1) * m + j];
@@ -264,6 +255,7 @@ mygmres (int n, double *f, double *x,
       g [j + 1] = s [j] * g0;
 
       (*res) = fabs (g [j + 1]); /* residual */
+      fprintf (stderr, "# iter %d res %e\n", j, *res);
       /* if satisfied, */
       if ((*res) <= tol)
 	{
@@ -277,11 +269,14 @@ mygmres (int n, double *f, double *x,
   /* solve y_k */
   back_sub (j, m, h, g, c); /* use c [] as y_k */
   /* x_m */
-  for (i=0; i<n; i++)
-    for (k=0; k<j; k++)
-      x [i] += v [k * n + i] * c [k];
+  for (i = 0; i < n; i ++)
+    {
+      for (k = 0; k < j; k ++)
+	{
+	  x [i] += v [k * n + i] * c [k];
+	}
+    }
 
-  free (tmp);
   free (v);
   free (h);
   free (g);
@@ -289,25 +284,23 @@ mygmres (int n, double *f, double *x,
   free (s);
 }
 
+/* m  : number of iteration */
+/* nn : dimension of matrix r [] (nnxnn) */
 static void
 back_sub (int m, int nn,
 	  double *r, double *g, double *y)
-/* m  : number of iteration */
-/* nn : dimension of matrix r [] (nnxnn) */
 {
   int i, j, jj;
 
-  /*for (j=m-1;j>=0;j--){*/
+  /*for (j = m - 1;j >= 0;j --){*/
   /* above for-loop fail, because j is unsigned!! */
-  for (jj=0; jj<m; jj++)
+  for (j = m - 1, jj = 0; jj < m; j --, jj ++)
     {
-      j = m - 1 - jj;
-      y [j] = 0.0;
-      for (i= j + 1; i<m; i++)
+      y [j] = g [j];
+      for (i = j + 1; i < m; i ++)
 	{
 	  y [j] -= r [j * nn + i] * y [i];
 	}
-      y [j] += g [j];
-      y [j] = y [j] / r [j * nn + j];
+      y [j] /= r [j * nn + j];
     }
 }
