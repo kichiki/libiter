@@ -1,7 +1,10 @@
 /* header file of orthomin.c
  * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: orthomin.h,v 2.1 2001/10/13 12:01:56 ichiki Exp $
+ * $Id: orthomin.h,v 2.2 2001/10/19 14:32:55 ichiki Exp $
  */
+
+/** global variables **/
+extern int ITER_otmk_debug; /* [0|1]: [not print/print] iter and res */
 
 void
 solve_iter_otmk (int n,
