@@ -6,14 +6,15 @@
  *             ver. 1.0 aug. 08 1995  s. l. zhang
  *    at urus.slzhang.fort.iter.real.gpbcg.gutknecht-p(final.f)
  *
- * translated from fortran into C by Kengo ICHIKI <kengo@caltech.edu>
- * $Id: bi-cgstab.c,v 1.1 1999/08/10 23:29:43 ichiki Exp $
+ * translated from fortran into C
+ *   by Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
+ * $Id: bi-cgstab.c,v 1.2 2000/12/18 09:16:17 ichiki Exp $
  */
 
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
-#include "myroutines.h" /* my_d_malloc() */
+#include "../myroutines.h" /* my_d_malloc() */
 
 #include "bi-cgstab.h"
 
@@ -91,7 +92,8 @@ sta (int m, double *b, double *x, int kend,
           p [i] = r [i] + beta * (p [i] - omega * q [i]);
 	} /* 210 */
       (*hg) = log10 (hal) / 2.0 - hnor;
-      /*fprintf (stdout, "33 %d %e\n", kk, hg);*/
+      /* for check
+      fprintf (stdout, "#STA %d %e\n", (* iter), (* hg)); */
 
       if((*hg) <= eps) goto end_sta;
       pap = 0.0;
@@ -230,7 +232,8 @@ st2 (int m, double *b, double *x, int kend,
           u [i] = y [i] + beta * u [i];
 	}/* 210 */
       (*hg) = log10 (hal) / 2.0 - hnor;
-      /*fprintf (stdout, "34 %d %e\n", kk, hg);*/
+      /* for check
+      fprintf (stdout, "#ST2 %d %e\n", (* iter), (* hg)); */
 
       if((*hg) <= eps) goto end_st2;
       pap = 0.0;
@@ -395,7 +398,8 @@ gpb (int m, double *b, double *x, int kend,
           u [i] = y [i] + beta * u [i];
 	}/* 210 */
       (*hg) = log10 (hal) / 2.0 - hnor;
-      /*fprintf (stdout, "36 %d %e\n", kk, hg);*/
+      /* for check
+      fprintf (stdout, "#GPB %d %e\n", (* iter), (* hg)); */
 
       if((*hg) <= eps) goto end_gpb;
       pap = 0.0;
