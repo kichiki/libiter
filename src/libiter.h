@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: libiter.h,v 2.1 2001/10/13 12:17:38 ichiki Exp $
+ * $Id: libiter.h,v 2.2 2001/10/13 23:03:44 ichiki Exp $
  */
 
 /* from blas.h */
@@ -24,10 +24,9 @@ void
 dscalz (int n, double da, double *dx, int incx,
 	double *dz, int incz);
 
-/* from mygmres.h */
 /* header file of mygmres.c
  * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * Id: mygmres.h,v 2.1 2001/10/13 12:12:18 ichiki Exp
+ * $Id: libiter.h,v 2.2 2001/10/13 23:03:44 ichiki Exp $
  */
 
 void
@@ -39,13 +38,13 @@ solve_iter_gmres (int n,
 void
 mygmres_m (int n, double *f, double *x,
 	   int m, double tol, int itmax,
-	   int *iter, double *err,
+	   int *iter, double *res,
 	   void (*myatimes) (int, double *, double *, void *),
 	   void * user_data);
 void
 mygmres (int n, double *f, double *x,
 	 double tol, int itmax,
-	 int *iter, double *err,
+	 int *iter, double *res,
 	 void (*myatimes) (int, double *, double *, void *),
 	 void * user_data);
 
