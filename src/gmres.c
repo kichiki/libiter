@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998,1999 Kengo ICHIKI <kengo@caltech.edu>
- * $Id: gmres.c,v 1.5 1999/05/05 00:27:20 ichiki Exp $
+ * $Id: gmres.c,v 1.6 1999/06/11 05:43:10 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -17,7 +17,8 @@ void
 mygmres_m (int n, double *f, double *x,
 	   int m,
 	   double tol,
-	   int itmax, int *iter, double *err)
+	   int itmax, int *iter, double *err,
+	   void (*myatimes) (int, double *, double *))
 {
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
@@ -54,7 +55,7 @@ mygmres_m (int n, double *f, double *x,
   g[0] = norm (n, tmp); /* beta */
   for (i=0; i<n; i++)
     {
-      v[0*n+i] = tmp[i] / g[0];
+      v[0 * n + i] = tmp[i] / g[0];
     }
   /* main loop */
   while (*iter <= itmax)
@@ -68,7 +69,7 @@ mygmres_m (int n, double *f, double *x,
 	  /* h_i,j (i=1,...,j) */
 	  for (i=0; i<=j; i++)
 	    {
-	      h[i*m+j] = inner (n, tmp, &v[i * n]);
+	      h[i * m + j] = inner (n, tmp, &v[i * n]);
 	    }
 	  /* vv_j+1 */
 	  for (k=0; k<n; k++)
@@ -78,7 +79,7 @@ mygmres_m (int n, double *f, double *x,
 		{
 		  hv += h[i * m + j] * v[i * n + k];
 		}
-	      tmp[k] = tmp[k] - hv; /* vv_j+1 */
+	      tmp[k] -= hv; /* vv_j+1 */
 	    }
 	  /* h_j+1,j */
 	  hh = norm (n, tmp); /* h_j+1,j */
@@ -102,8 +103,8 @@ mygmres_m (int n, double *f, double *x,
 	  h[j * m + j] = hv; /* resultant (after rotated) element */
 
 	  g0 = g[j];
-	  g[j  ] = c[j] * g0;
-	  g[j+1] = s[j] * g0;
+	  g[j    ] = c[j] * g0;
+	  g[j + 1] = s[j] * g0;
 	}
       /* 3. form the approximate solution */
       /* solve y_k */
@@ -147,7 +148,8 @@ mygmres_m (int n, double *f, double *x,
 void
 mygmres (int n, double *f, double *x,
 	 double tol,
-	 int itmax, int *iter, double *err)
+	 int itmax, int *iter, double *err,
+	 void (*myatimes) (int, double *, double *))
 {
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
@@ -161,7 +163,7 @@ mygmres (int n, double *f, double *x,
     rr,hh,
     r1,r2,
     g0,
-    *tmp,*v,*h,*g,*c,*s;
+    *tmp, *v, *h, *g, *c, *s;
 
   m = itmax;
 
@@ -175,10 +177,11 @@ mygmres (int n, double *f, double *x,
   /* 1. start: */
   /* compute r0 */
   /* tmp = A.x0 */
-  myatimes(n,x,tmp);
-  for (i=0;i<n;i++){
-    tmp[i] = f[i]-tmp[i]; /* r0 */
-  }
+  myatimes (n, x, tmp);
+  for (i=0; i<n; i++)
+    {
+      tmp[i] = f[i] - tmp[i]; /* r0 */
+    }
   /* compute v1 */
   g[0] = norm (n, tmp); /* beta */
   for (i=0; i<n; i++)
@@ -190,7 +193,7 @@ mygmres (int n, double *f, double *x,
   for (j=0; j<m; j++)
     {
       /* tmp = A.vj */
-      myatimes(n, &v[j * n], tmp);
+      myatimes (n, &v[j * n], tmp);
       /* h_i,j (i=1,...,j) */
       for (i=0; i<=j; i++)
 	{
@@ -204,7 +207,7 @@ mygmres (int n, double *f, double *x,
 	    {
 	      hv += h[i * m + j] * v[i * n + k];
 	    }
-	  tmp[k] = tmp[k] - hv; /* vv_j+1 */
+	  tmp[k] -= hv; /* vv_j+1 */
 	}
       /* h_j+1,j */
       hh = norm (n, tmp); /* h_j+1,j */
@@ -303,20 +306,3 @@ inner (int n, double *x, double *y)
     ans += x[i] * y[i];
   return ans;
 }
-
-/*
-void
-myatimes (int n, double *x, double *y)
-{
-  extern double ITER_A[];
-  int i,j;
-
-  for (i=0; i<n; i++)
-    {
-      y[i] = 0.0;
-        for (j=0; j<n; j++)
-          {
-            y[i] += ITER_A[i * n + j] * x[j];
-          }
-    }
-}*/
