@@ -1,6 +1,6 @@
 /* wrapper for iterative solver routines
  * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 2.2 2001/10/13 21:38:19 ichiki Exp $
+ * $Id: bi-cgstab.c,v 2.3 2001/10/19 14:30:40 ichiki Exp $
  *
  * (solver routines themselves are originally written by martin h. gutknecht)
  */
@@ -9,6 +9,9 @@
 #include <stdlib.h> /* malloc(), free() */
 
 #include "bi-cgstab.h"
+
+/** global variables **/
+int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
 
 
 /* wrapper routine for solvers below
@@ -35,6 +38,7 @@ solve_iter_stab (int n,
 				 void *),
 		 int it_max, double log10_eps)
 {
+  extern int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
   int i;
 
   double hnor;
@@ -53,7 +57,8 @@ solve_iter_stab (int n,
 	  hnor, &iter, &residual, atimes,
 	  user_data);
 
-  fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
+  if (ITER_stab_debug)
+    fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
 
 
