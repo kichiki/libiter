@@ -1,12 +1,14 @@
-/*             ===============rog.f==============
+/* orthomin scheme
+ * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: orthomin.c,v 2.3 2006/09/26 05:31:06 ichiki Exp $
+ *
+ * translated from fortran code
+ *             ===============rog.f==============
  *             problem given by martin h. gutknecht
  *             numerical method: orthomin(k) method
  *             ver. 1.0 jul. 28 1995 by s. l. zhang
  *             ver. 1.1 aug. 31 1995 by s. l. zhang
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
- *
- * translated from fortran to C by Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: orthomin.c,v 2.2 2001/10/19 14:32:18 ichiki Exp $
  */
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
@@ -31,15 +33,15 @@ int ITER_otmk_debug; /* [0|1]: [not print/print] iter and res */
  *   x [n] : solution
  */
 void
-solve_iter_otmk (int n,
-		 double *b, double *x,
-		 void (*atimes) (int, double *, double *, void *),
+solve_iter_otmk (int n, const double *b,
+		 double *x,
+		 void (*atimes) (int, const double *, double *, void *),
 		 void * user_data,
-		 void (*solver) (int, double *, double *,
+		 void (*solver) (int, const double *, double *,
 				 int, int, double,
 				 double, int *, double *,
 				 void (*)
-				 (int, double *, double *, void *),
+				 (int, const double *, double *, void *),
 				 void *),
 		 int it_max, double log10_eps,
 		 int it_restart)
@@ -84,11 +86,11 @@ solve_iter_otmk (int n,
  *   *hg : log10(residual)
  */
 void
-otmk (int m, double *b, double *x,
+otmk (int m, const double *b, double *x,
       int kres, int kend,
       double eps, double hnor,
       int *iter, double *hg,
-      void (*myatimes) (int, double *, double *, void *),
+      void (*myatimes) (int, const double *, double *, void *),
       void * user_data)
 {
   double *r; /* r[m] */
