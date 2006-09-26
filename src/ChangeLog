@@ -1,0 +1,317 @@
+2006-09-26  Kengo Ichiki  <ichiki@tpr60>
+
+	* libiter.h: 2.5 2006/09/26 17:14:32 ichiki Exp
+	update.
+
+	* bi-cgstab.h: 2.4 2006/09/26 17:10:06 ichiki Exp
+
+	* bi-cgstab.c: 2.5 2006/09/26 17:10:42 ichiki Exp
+	file name is changed from 'mygmres.c' to 'gmres.c'.
+	put the GPL notice.
+
+	* orthomin.h: 2.4 2006/09/26 17:09:27 ichiki Exp
+
+	* orthomin.c: 2.4 2006/09/26 16:57:58 ichiki Exp
+	file name is changed from 'mygmres.c' to 'gmres.c'.
+	put the GPL notice.
+
+	* gmres.h: 2.5 2006/09/26 17:08:52 ichiki Exp
+
+	* gmres.c: 2.6 2006/09/26 16:51:42 ichiki Exp
+	file name is changed from 'mygmres.c' to 'gmres.c'.
+	put the GPL notice.
+
+	* myblas.h: 1.3 2006/09/26 17:08:07 ichiki Exp
+
+	* myblas.c: 1.4 2006/09/26 16:48:57 ichiki Exp
+	file name is changed from 'blas.c' to 'myblas.c'.
+	put the GPL notice.
+
+	* libiter.h: 2.4 2006/09/26 05:37:05 ichiki Exp
+	update.
+
+	* orthomin.h: 2.3 2006/09/26 05:33:45 ichiki Exp
+
+	* orthomin.c: 2.3 2006/09/26 05:31:06 ichiki Exp
+	put 'const' for const pointers.
+
+	* bi-cgstab.h: 2.3 2006/09/26 05:35:12 ichiki Exp
+
+	* bi-cgstab.c: 2.4 2006/09/26 05:23:48 ichiki Exp
+	put 'const' for const pointers.
+
+	* gmres.h: 2.4 2006/09/26 05:22:20 ichiki Exp
+
+	* gmres.c: 2.5 2006/09/26 05:18:55 ichiki Exp
+	put 'const' for const pointers.
+
+	* myblas.h: 1.2 2006/09/26 05:17:41 ichiki Exp
+
+	* myblas.c: 1.3 2006/09/26 05:16:17 ichiki Exp
+	put 'const' for const pointers.
+
+2006-09-25  Kengo Ichiki  <ichiki@tpr60>
+
+	* orthomin.h: move from LIBEXP to RYUON/libiter (here).
+
+	* orthomin.c: move from LIBEXP to RYUON/libiter (here).
+
+	* bi-cgstab.h: move from LIBEXP to RYUON/libiter (here).
+
+	* bi-cgstab.c: move from LIBEXP to RYUON/libiter (here).
+
+	* gmres.h: move from LIBEXP to RYUON/libiter (here).
+
+	* gmres.c: move from LIBEXP to RYUON/libiter (here).
+
+	* myblas.h: move from LIBEXP to RYUON/libiter (here).
+
+	* myblas.c: move from LIBEXP to RYUON/libiter (here).
+
+	* myblas.h: move from LIBEXP to RYUON/libiter (here).
+
+2003-05-08  kengo ichiki  <ichiki@tp>
+
+	* gmres.c: 2.4 2003/05/09 01:55:09 ichiki Exp
+	(back_sub): style change.
+	(mygmres_m): remove using temporary area 'tmp'.
+	(mygmres): remove using temporary area 'tmp'.
+
+2003-04-25  kengo ichiki  <ichiki@tp>
+
+	* orthomin.h: move to LIBEXP.
+
+	* orthomin.c: move to LIBEXP.
+
+	* bi-cgstab.h: move to LIBEXP.
+
+	* bi-cgstab.c: move to LIBEXP.
+
+	* gmres.h: move to LIBEXP.
+
+	* gmres.c: move to LIBEXP.
+
+	* myblas.h: move to LIBEXP.
+
+	* myblas.c: move to LIBEXP.
+
+	* myblas.h: 1.1 2003/04/26 02:49:28 ichiki Exp
+	initial revision.
+
+2001-10-19  Kengo Ichiki  <ichiki@haloumi.tn.utwente.nl>
+
+	* orthomin.h: 2.2 2001/10/19 14:32:55 ichiki Exp
+	introduce global variable 'ITER_otmk_debug'.
+
+	* orthomin.c: 2.2 2001/10/19 14:32:18 ichiki Exp
+	introduce global variable 'ITER_otmk_debug'.
+	(solve_iter_otmk): print 'iter' and 'res' if 'ITER_otmk_debug' is
+	non-zero.
+
+	* bi-cgstab.h: 2.2 2001/10/19 14:31:22 ichiki Exp
+	introduce global variable 'ITER_stab_debug'.
+
+	* bi-cgstab.c: 2.3 2001/10/19 14:30:40 ichiki Exp
+	introduce global variable 'ITER_stab_debug'.
+	(solve_iter_stab): print 'iter' and 'res' if 'ITER_stab_debug' is
+	non-zero.
+
+	* gmres.h: 2.3 2001/10/19 14:29:41 ichiki Exp
+	introduce global variable 'ITER_mygmres_debug'.
+
+	* gmres.c: 2.3 2001/10/19 14:29:14 ichiki Exp
+	introduce global variable 'ITER_mygmres_debug'.
+	(solve_iter_gmres): print 'iter' and 'res' if 'ITER_mygmres_debug' is
+	non-zero.
+
+2001-10-14  Kengo Ichiki  <ichiki@cam028.student.utwente.nl>
+
+	* gmres.c: 2.2 2001/10/13 23:02:36 ichiki Exp
+	change argument 'err' to 'res', because this is not the error but
+	the residual.
+
+	* gmres.h: 2.2 2001/10/13 23:01:02 ichiki Exp
+	(mygmres): change 'err' to 'res', because this is not the error but
+	the residual.
+
+2001-10-13  Kengo Ichiki  <ichiki@cam028.student.utwente.nl>
+
+	* gmres.h: 2.1 2001/10/13 12:12:18 ichiki Exp
+	add argument 'user_data' to be passed to solver and atimes routines.
+	make globals 'GMRES_it_max', 'GMRES_it_restart', and 'GMRES_eps'as
+	local, and put the argument.
+
+	* gmres.c: 2.1 2001/10/13 12:12:55 ichiki Exp
+	add argument 'user_data' to be passed to solver and atimes routines.
+	make globals 'GMRES_it_max', 'GMRES_it_restart', and 'GMRES_eps'as
+	local, and put the argument.
+
+	* gmres.h: 1.1 2001/10/13 12:10:31 ichiki Exp
+	initial revision.
+	(before revision.)
+
+	* orthomin.h: 2.1 2001/10/13 12:01:56 ichiki Exp
+	add argument 'user_data' to be passed to solver and atimes routines.
+	make globals 'STAB_it_max', 'STAB_log10_eps' and 'GMRES_it_restart'
+	as local, and put the argument.
+
+	* orthomin.c: 2.1 2001/10/13 12:01:27 ichiki Exp
+	add argument 'user_data' to be passed to solver and atimes routines.
+	make globals 'STAB_it_max', 'STAB_log10_eps' and 'GMRES_it_restart'
+	as local, and put the argument.
+
+	* orthomin.h: 1.1 2001/10/13 11:56:13 ichiki Exp
+	initial revision.
+	(before revision.)
+
+	* bi-cgstab.c: 2.2 2001/10/13 21:38:19 ichiki Exp
+	(solve_iter_stab): minor fix.
+
+	* bi-cgstab.h: 2.1 2001/10/13 11:46:15 ichiki Exp
+	add argument 'user_data' to be passed to solver and atimes routines.
+	make globals 'STAB_it_max' and 'STAB_log10_eps' as local.
+
+	* bi-cgstab.c: 2.1 2001/10/13 11:47:03 ichiki Exp
+	add argument 'user_data' to be passed to solver and atimes routines.
+	make globals 'STAB_it_max' and 'STAB_log10_eps' as local.
+
+	* bi-cgstab.h: 1.1 2001/10/13 11:44:42 ichiki Exp
+	initial revision.
+	(before revision.)
+
+2001-02-09  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* orthomin.c: 1.6 2001/02/09 06:54:43 ichiki Exp
+	(solve_iter_otmk): added. note that the global variables
+	STAB_it_max, STAB_log10_eps, and GMRES_it_restart are used.
+
+2001-02-07  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* bi-cgstab.c: 1.7 2001/02/07 05:24:50 ichiki Exp
+	(st2_chk): added.
+
+2001-02-05  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* gmres.c: 1.12 2001/02/05 06:30:12 ichiki Exp
+	(solve_iter_gmres): added.
+
+2001-02-01  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* bi-cgstab.c: 1.6 2001/02/01 07:36:47 ichiki Exp
+	(gpb_chk): added; this is the checking version printing residuals
+	in each iteration.
+
+2001-01-29  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* bi-cgstab.c: 1.5 2001/01/29 08:37:38 ichiki Exp
+	introducing global variables 'STAB_it_max' and 'STAB_log10_eps'.
+	(solve_iter_stab): change argument and use the global variables.
+
+2001-01-24  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* bi-cgstab.c: 1.4 2001/01/24 07:26:41 ichiki Exp
+	(solve_iter_stab): added. this is a wrapper routine for solvers here.
+
+2001-01-07  ICHIKI Kengo  <ichiki@esau.psdn.org>
+
+	* orthomin.c: 1.5 2001/01/07 05:48:02 ichiki Exp
+	make my_d_malloc()-free; direct call of malloc().
+
+	* bi-cgstab.c: 1.3 2001/01/07 05:47:19 ichiki Exp
+	make my_d_malloc()-free; direct call of malloc().
+
+	* gmres.c: 1.11 2001/01/07 05:46:35 ichiki Exp
+	make my_d_malloc()-free; direct call of malloc().
+
+2000-12-18  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* bi-cgstab.c: 1.2 2000/12/18 09:16:17 ichiki Exp
+	(sta): 
+	(st2): 
+	(gpb): modefy to printout residual VS iteration for check, (now
+	it is comment-out.)
+
+2000-06-27  ICHIKI Kengo  <ichiki@kona.jinkan.kyoto-u.ac.jp>
+
+	* gmres.c: 1.10 2000/06/27 07:23:54 ichiki Exp
+	(mygmres): correct count of iter.
+
+Sun Sep  5 14:07:33 1999  Kengo ICHIKI  <ichiki@konakia.jinkan.kyoto-u.ac.jp>
+
+	* myblas.c: 1.2 1999/09/05 22:34:45 ichiki Exp
+	(dnrm2_): rename dnrm2() because this is too slow.
+	(dnrm2): plain unrolling version is created.
+
+	* gmres.c: 1.9 1999/09/05 22:33:18 ichiki Exp
+	make use of BLAS routines in myblas.c.
+
+	* myblas.c: 1.1 1999/09/05 21:23:56 ichiki Exp
+	initial revision.
+	now translated the following routines;
+	daxpy (), dcopy (), dnrm2 (), ddot (), dscal (),
+	and added
+	daxpyz (), dscalz ().
+
+Tue Aug 10 14:32:47 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* bi-cgstab.c: 1.1 1999/08/10 23:29:43 ichiki Exp
+	initial revision.
+	extracted from zhang-nopre.c Rev 1.7.
+
+Thu Aug  5 12:45:15 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* gmres.c: 1.8 1999/08/05 19:45:29 ichiki Exp
+	make use of my_d_malloc().
+
+Wed Aug  4 12:06:46 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* gmres.c: 1.7 1999/08/04 19:07:02 ichiki Exp
+	style change.
+
+Thu Jun 10 22:35:40 1999  Kengo ICHIKI  <ichiki@konakia.jinkan.kyoto-u.ac.jp>
+
+	* gmres.c: 1.6 1999/06/11 05:43:10 ichiki Exp
+	modify argument to give a specific myatimes() routine.
+	
+Wed Jun  9 10:36:14 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* orthomin.c: 1.4 1999/06/09 17:37:16 ichiki Exp
+	(otmk): modify argument to give a specific myatimes() routine.
+
+Tue May 25 12:34:33 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* orthomin.c: 1.3 1999/05/25 19:42:17 ichiki Exp
+	change subroutine name 'mydmalloc()' into 'my_d_malloc()'.
+
+Fri May 14 16:10:20 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* orthomin.c: 1.2 1999/05/14 23:11:26 ichiki Exp
+	(otmk): make use of 'mydmalloc()' in myroutines.c.
+
+Tue May 11 13:12:48 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* orthomin.c: 1.1 1999/05/11 20:13:20 ichiki Exp
+	initial revision.
+	extracted from zhang-nopre.c (Rev 1.6).
+
+Tue May  4 13:34:50 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* gmres.c: 1.5 1999/05/05 00:27:20 ichiki Exp
+	style is modified.
+
+Fri Jan 29 23:28:14 1999  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* gmres.c: revision 1.4
+	replace NR allocation routine into malloc().
+
+Sat Jun 20 22:3102 1998  ICHIKI Kengo  <ichiki@konakia.che.caltech.edu>
+
+	* gmres.c: revision 1.3
+	now debuging!
+
+	* gmres.c: revision 1.2
+	make portable subroutine 'myatimes', which multiply vector to matrix.
+
+	* gmres.c: revision 1.1
+	Initial revision
+
