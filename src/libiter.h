@@ -1,14 +1,25 @@
-/* header file for library 'iter' -- mygmres.c, bi-cgstab.c, and orthomin.c.
- * Copyright (C) 2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: libiter.h,v 2.4 2006/09/26 05:37:05 ichiki Exp $
+/* header file for library 'iter' -- gmres.c, bi-cgstab.c, and orthomin.c.
+ * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: libiter.h,v 2.5 2006/09/26 17:14:32 ichiki Exp $
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/** from blas.h **/
+/** from myblas.h **/
 /* header file for blas.c --
- * BLAS
- * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- *
- * Excerpted from : BLAS package
+ * Excerpted from BLAS package
  */
 
 /*    constant times a vector plus a vector.
@@ -106,10 +117,9 @@ dscalz (int n, double da, const double *dx, int incx,
 	double *dz, int incz);
 
 
-/** from mygmres.h **/
+/** from gmres.h **/
 /* header file of mygmres.c --
  * generalized minimum residual method
- * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -117,9 +127,20 @@ dscalz (int n, double da, const double *dx, int incx,
  */
 
 /** global variables **/
-extern int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
+extern int ITER_gmres_debug; /* [0|1]: [not print/print] iter and res */
 
 
+/* wrapper routine for gmres_m ()
+ * INPUT
+ *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
+ *   b [n] : given vector
+ *   atimes (n, x, b) : routine to calc A.x and return b[]
+ *   it_max : max # iterations
+ *   it_restart : # iterations to restart
+ *   eps : the accuracy
+ * OUTPUT
+ *   x [n] : solution
+ */
 void
 solve_iter_gmres (int n,
 		  const double *b, double *x,
@@ -127,24 +148,31 @@ solve_iter_gmres (int n,
 		  void * user_data,
 		  int it_max, int it_restart, double eps);
 void
-mygmres_m (int n, const double *f, double *x,
-	   int m, double tol, int itmax,
-	   int *iter, double *res,
-	   void (*myatimes) (int, const double *, double *, void *),
-	   void * user_data);
-void
-mygmres (int n, const double *f, double *x,
-	 double tol, int itmax,
+gmres_m (int n, const double *f, double *x,
+	 int m, double tol, int itmax,
 	 int *iter, double *res,
 	 void (*myatimes) (int, const double *, double *, void *),
 	 void * user_data);
+void
+gmres (int n, const double *f, double *x,
+       double tol, int itmax,
+       int *iter, double *res,
+       void (*myatimes) (int, const double *, double *, void *),
+       void * user_data);
 
 /** from bi-cgstab.h **/
 /* header file of bi-cgstab.c --
  * wrapper for iterative solver routines
- * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
  *
- * (solver routines themselves are originally written by martin h. gutknecht)
+ * solver routines are translated into C by K.I. from fortran code
+ * originally written by martin h. gutknecht
+ *             ===============rog.f==============
+ *             problem given by martin h. gutknecht
+ *             numerical method: bi-cgsta        method -- sta ()
+ *             numerical method: bi-cgsta2       method -- st2 ()
+ *             numerical method: gpbi-cg         method -- gpb ()
+ *             ver. 1.0 aug. 08 1995  s. l. zhang
+ *    at urus.slzhang.fort.iter.real.gpbcg.gutknecht-p(final.f)
  */
 
 /** global variables **/
@@ -195,9 +223,9 @@ gpb_chk (int m, const double *b, double *x, int kend,
 /** from orthomin.h **/
 /* header file of orthomin.c --
  * orthomin scheme
- * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
  *
- * translated from fortran code
+ * solver routines are translated into C by K.I. from fortran code
+ * originally written by martin h. gutknecht
  *             ===============rog.f==============
  *             problem given by martin h. gutknecht
  *             numerical method: orthomin(k) method
