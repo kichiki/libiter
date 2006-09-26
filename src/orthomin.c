@@ -1,14 +1,29 @@
 /* orthomin scheme
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: orthomin.c,v 2.3 2006/09/26 05:31:06 ichiki Exp $
+ * $Id: orthomin.c,v 2.4 2006/09/26 16:57:58 ichiki Exp $
  *
- * translated from fortran code
+ * solver routines are translated into C by K.I. from fortran code
+ * originally written by martin h. gutknecht
  *             ===============rog.f==============
  *             problem given by martin h. gutknecht
  *             numerical method: orthomin(k) method
  *             ver. 1.0 jul. 28 1995 by s. l. zhang
  *             ver. 1.1 aug. 31 1995 by s. l. zhang
  *    at slzhang.fort.iter.complex.orthomin.gutknecht-problem(gut.f)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
@@ -115,13 +130,7 @@ otmk (int m, const double *b, double *x,
   double *tmp; /* tmp[m] */
 
 
-  /* allocation of matrices
-  r    = my_d_malloc (m, "r");
-  p    = my_d_malloc (m * (kres + 1), "p");
-  ap   = my_d_malloc (m * (kres + 1), "ap");
-  beta = my_d_malloc ((kres + 1), "beta");
-  pap  = my_d_malloc ((kres + 1), "pap");
-  tmp  = my_d_malloc (m, "tmp"); */
+  /* allocation of matrices */
   r    = (double *) malloc (sizeof (double) * m);
   p    = (double *) malloc (sizeof (double) * m * (kres + 1));
   ap   = (double *) malloc (sizeof (double) * m * (kres + 1));
