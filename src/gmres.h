@@ -1,6 +1,11 @@
-/* header file of mygmres.c
- * Copyright (C) 1998-2001 Kengo Ichiki <ichiki@haloumi.tn.utwente.nl>
- * $Id: gmres.h,v 2.3 2001/10/19 14:29:41 ichiki Exp $
+/* header file of mygmres.c --
+ * generalized minimum residual method
+ * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: gmres.h,v 2.4 2006/09/26 05:22:20 ichiki Exp $
+ *
+ * Reference :
+ *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
+ *   vol7 (1986) pp.856-869
  */
 
 /** global variables **/
@@ -9,19 +14,19 @@ extern int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
 
 void
 solve_iter_gmres (int n,
-		  double *b, double *x,
-		  void (*atimes) (int, double *, double *, void *),
+		  const double *b, double *x,
+		  void (*atimes) (int, const double *, double *, void *),
 		  void * user_data,
 		  int it_max, int it_restart, double eps);
 void
-mygmres_m (int n, double *f, double *x,
+mygmres_m (int n, const double *f, double *x,
 	   int m, double tol, int itmax,
 	   int *iter, double *res,
-	   void (*myatimes) (int, double *, double *, void *),
+	   void (*myatimes) (int, const double *, double *, void *),
 	   void * user_data);
 void
-mygmres (int n, double *f, double *x,
+mygmres (int n, const double *f, double *x,
 	 double tol, int itmax,
 	 int *iter, double *res,
-	 void (*myatimes) (int, double *, double *, void *),
+	 void (*myatimes) (int, const double *, double *, void *),
 	 void * user_data);

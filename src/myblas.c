@@ -1,6 +1,6 @@
 /* BLAS
- * Copyright (C) 1999 Kengo ICHIKI <kengo@caltech.edu>
- * $Id: myblas.c,v 1.2 1999/09/05 22:34:45 ichiki Exp $
+ * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: myblas.c,v 1.3 2006/09/26 05:16:17 ichiki Exp $
  *
  * Excerpted from : BLAS package
  */
@@ -22,7 +22,7 @@
  *    dy [n * incy] : vector
  */
 void
-daxpy (int n, double da, double *dx, int incx, double *dy, int incy)
+daxpy (int n, double da, const double *dx, int incx, double *dy, int incy)
 {
   int i, ix, iy;
   int m;
@@ -79,7 +79,8 @@ daxpy (int n, double da, double *dx, int incx, double *dy, int incy)
  *    dz [n * incy] : vector
  */
 void
-daxpyz (int n, double da, double *dx, int incx, double *dy, int incy,
+daxpyz (int n, double da, const double *dx, int incx,
+	const double *dy, int incy,
 	double *dz, int incz)
 {
   int i, ix, iy;
@@ -139,7 +140,7 @@ daxpyz (int n, double da, double *dx, int incx, double *dy, int incy,
  *    dy [n * incy] : vector
  */
 void
-dcopy (int n, double *dx, int incx,
+dcopy (int n, const double *dx, int incx,
        double * dy, int incy)
 {
   int i, ix, iy;
@@ -200,7 +201,7 @@ dcopy (int n, double *dx, int incx,
  *     Sven Hammarling, Nag Ltd.
  */
 double
-dnrm2_ (int n, double *x, int incx)
+dnrm2_ (int n, const double *x, int incx)
 {
   /* .. Parameters .. */
   static double one = 1.0;
@@ -244,7 +245,7 @@ dnrm2_ (int n, double *x, int incx)
 }
 
 double
-dnrm2 (int n, double *x, int incx)
+dnrm2 (int n, const double *x, int incx)
 {
   int i;
   int ix;
@@ -298,7 +299,7 @@ dnrm2 (int n, double *x, int incx)
  * OUTPUT (return value)
  */
 double
-ddot (int n, double *dx, int incx, double *dy, int incy)
+ddot (int n, const double *dx, int incx, const double *dy, int incy)
 {
   double dtemp;
   int i, ix, iy;
@@ -406,7 +407,7 @@ dscal (int n, double da, double *dx, int incx)
  * calc dz [i] = da * dx [i]
  */
 void
-dscalz (int n, double da, double *dx, int incx,
+dscalz (int n, double da, const double *dx, int incx,
 	double *dz, int incz)
 {
   int i, m, nincx;

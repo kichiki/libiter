@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2003 Kengo Ichiki <ichiki@jhu.edu>
- * $Id: gmres.c,v 2.4 2003/05/09 01:55:09 ichiki Exp $
+ * $Id: gmres.c,v 2.5 2006/09/26 05:18:55 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -18,11 +18,6 @@
 int ITER_mygmres_debug; /* [0|1]: [not print/print] iter and res */
 
 
-static void
-back_sub (int m, int nn,
-	  double *r, double *g, double *y);
-
-
 /* wrapper routine for mygmres_m ()
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
@@ -36,8 +31,8 @@ back_sub (int m, int nn,
  */
 void
 solve_iter_gmres (int n,
-		  double *b, double *x,
-		  void (*atimes) (int, double *, double *, void *),
+		  const double *b, double *x,
+		  void (*atimes) (int, const double *, double *, void *),
 		  void * user_data,
 		  int it_max, int it_restart, double eps)
 {
@@ -56,11 +51,32 @@ solve_iter_gmres (int n,
     fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
 
+/* m  : number of iteration */
+/* nn : dimension of matrix r [] (nnxnn) */
+static void
+back_sub (int m, int nn,
+	  const double *r, const double *g,
+	  double *y)
+{
+  int i, j, jj;
+
+  /*for (j = m - 1;j >= 0;j --){*/
+  /* above for-loop fail, because j is unsigned!! */
+  for (j = m - 1, jj = 0; jj < m; j --, jj ++)
+    {
+      y [j] = g [j];
+      for (i = j + 1; i < m; i ++)
+	{
+	  y [j] -= r [j * nn + i] * y [i];
+	}
+      y [j] /= r [j * nn + j];
+    }
+}
 void
-mygmres_m (int n, double *f, double *x,
+mygmres_m (int n, const double *f, double *x,
 	   int m, double tol, int itmax,
 	   int *iter, double *res,
-	   void (*myatimes) (int, double *, double *, void *),
+	   void (*myatimes) (int, const double *, double *, void *),
 	   void * user_data)
 {
   /* solve linear system A.x = f */
@@ -176,10 +192,10 @@ mygmres_m (int n, double *f, double *x,
 }
 
 void
-mygmres (int n, double *f, double *x,
+mygmres (int n, const double *f, double *x,
 	 double tol, int itmax,
 	 int *iter, double *res,
-	 void (*myatimes) (int, double *, double *, void *),
+	 void (*myatimes) (int, const double *, double *, void *),
 	 void * user_data)
 {
   /* solve linear system A.x = f */
@@ -284,23 +300,3 @@ mygmres (int n, double *f, double *x,
   free (s);
 }
 
-/* m  : number of iteration */
-/* nn : dimension of matrix r [] (nnxnn) */
-static void
-back_sub (int m, int nn,
-	  double *r, double *g, double *y)
-{
-  int i, j, jj;
-
-  /*for (j = m - 1;j >= 0;j --){*/
-  /* above for-loop fail, because j is unsigned!! */
-  for (j = m - 1, jj = 0; jj < m; j --, jj ++)
-    {
-      y [j] = g [j];
-      for (i = j + 1; i < m; i ++)
-	{
-	  y [j] -= r [j * nn + i] * y [i];
-	}
-      y [j] /= r [j * nn + j];
-    }
-}

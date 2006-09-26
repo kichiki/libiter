@@ -1,6 +1,6 @@
 /* wrapper for iterative solver routines
- * Copyright (C) 1999-2001 Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- * $Id: bi-cgstab.c,v 2.3 2001/10/19 14:30:40 ichiki Exp $
+ * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: bi-cgstab.c,v 2.4 2006/09/26 05:23:48 ichiki Exp $
  *
  * (solver routines themselves are originally written by martin h. gutknecht)
  */
@@ -27,14 +27,14 @@ int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
  *   x [n] : solution
  */
 void
-solve_iter_stab (int n,
-		 double *b, double *x,
-		 void (*atimes) (int, double *, double *, void *),
+solve_iter_stab (int n, const double *b,
+		 double *x,
+		 void (*atimes) (int, const double *, double *, void *),
 		 void * user_data,
-		 void (*solver) (int, double *, double *, int,
+		 void (*solver) (int, const double *, double *, int,
 				 double, double, int *, double *,
 				 void (*)
-				 (int, double *, double *, void *),
+				 (int, const double *, double *, void *),
 				 void *),
 		 int it_max, double log10_eps)
 {
@@ -88,10 +88,10 @@ solve_iter_stab (int n,
  *   *hg : log10(residual)
  */
 void
-sta (int m, double *b, double *x, int kend,
+sta (int m, const double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
-     void (*myatimes) (int, double *, double *, void *),
+     void (*myatimes) (int, const double *, double *, void *),
      void * user_data)
 {
   int i;
@@ -235,10 +235,10 @@ end_sta:
  *   *hg : log10(residual)
  */
 void
-sta2 (int m, double *b, double *x, int kend,
+sta2 (int m, const double *b, double *x, int kend,
       double eps, double hnor,
       int *iter, double *hg,
-      void (*myatimes) (int, double *, double *, void *),
+      void (*myatimes) (int, const double *, double *, void *),
       void * user_data)
 {
   int i;
@@ -402,10 +402,10 @@ end_st2:
 /* bi-cgstab2 method with check (printing residual in iterations)
  */
 void
-st2_chk (int m, double *b, double *x, int kend,
+st2_chk (int m, const double *b, double *x, int kend,
 	 double eps, double hnor,
 	 int *iter, double *hg,
-	 void (*myatimes) (int, double *, double *, void *),
+	 void (*myatimes) (int, const double *, double *, void *),
 	 void * user_data)
 {
   int i;
@@ -580,10 +580,10 @@ end_st2_chk:
  *   *hg : log10(residual)
  */
 void
-gpb (int m, double *b, double *x, int kend,
+gpb (int m, const double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
-     void (*myatimes) (int, double *, double *, void *),
+     void (*myatimes) (int, const double *, double *, void *),
      void * user_data)
 {
   int i;
@@ -758,10 +758,10 @@ end_gpb:
 /* gpbi-cg method with check (printing residual in iterations)
  */
 void
-gpb_chk (int m, double *b, double *x, int kend,
+gpb_chk (int m, const double *b, double *x, int kend,
 	 double eps, double hnor,
 	 int *iter, double *hg,
-	 void (*myatimes) (int, double *, double *, void *),
+	 void (*myatimes) (int, const double *, double *, void *),
 	 void * user_data)
 {
   int i;
