@@ -1,8 +1,30 @@
 /* wrapper for iterative solver routines
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bi-cgstab.c,v 2.4 2006/09/26 05:23:48 ichiki Exp $
+ * $Id: bi-cgstab.c,v 2.5 2006/09/26 17:10:42 ichiki Exp $
  *
- * (solver routines themselves are originally written by martin h. gutknecht)
+ * solver routines are translated into C by K.I. from fortran code
+ * originally written by martin h. gutknecht
+ *             ===============rog.f==============
+ *             problem given by martin h. gutknecht
+ *             numerical method: bi-cgsta        method -- sta ()
+ *             numerical method: bi-cgsta2       method -- st2 ()
+ *             numerical method: gpbi-cg         method -- gpb ()
+ *             ver. 1.0 aug. 08 1995  s. l. zhang
+ *    at urus.slzhang.fort.iter.real.gpbcg.gutknecht-p(final.f)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
@@ -61,19 +83,6 @@ solve_iter_stab (int n, const double *b,
     fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
 }
 
-
-/*             ===============rog.f==============
- *             problem given by martin h. gutknecht
- *             numerical method: bi-cgsta        method -- sta ()
- *             numerical method: bi-cgsta2       method -- st2 ()
- *             numerical method: gpbi-cg         method -- gpb ()
- *             ver. 1.0 aug. 08 1995  s. l. zhang
- *    at urus.slzhang.fort.iter.real.gpbcg.gutknecht-p(final.f)
- *
- * translated from fortran into C
- *   by Kengo Ichiki <ichiki@kona.jinkan.kyoto-u.ac.jp>
- */
-
 /* bi-cgstab method
  *   m : dimension of the problem
  *   kend : max of iteration
@@ -118,12 +127,6 @@ sta (int m, const double *b, double *x, int kend,
   double *tmp;
 
 
-  /*r0 = my_d_malloc (m, "r0");
-  p  = my_d_malloc (m, "p");
-  q  = my_d_malloc (m, "q");
-  t  = my_d_malloc (m, "t");
-  r  = my_d_malloc (m, "r");
-  tmp= my_d_malloc (m, "tmp");*/
   r0  = (double *) malloc (sizeof (double) * m);
   p   = (double *) malloc (sizeof (double) * m);
   q   = (double *) malloc (sizeof (double) * m);
@@ -218,8 +221,6 @@ end_sta:
   free (r);
   free (tmp);
 }
-
-
 
 /* bi-cgstab2 method
  *   m : dimension of the problem
@@ -613,16 +614,6 @@ gpb (int m, const double *b, double *x, int kend,
   /* for myatimes () */
   double *tmp;
 
-
-  /*r0 = my_d_malloc (m, "r0");
-  w  = my_d_malloc (m, "w");
-  q  = my_d_malloc (m, "q");
-  u  = my_d_malloc (m, "u");
-  z  = my_d_malloc (m, "z");
-  y  = my_d_malloc (m, "y");
-  r  = my_d_malloc (m, "r");
-  p  = my_d_malloc (m, "p");
-  tmp= my_d_malloc (m, "tmp");*/
   r0  = (double *) malloc (sizeof (double) * m);
   w   = (double *) malloc (sizeof (double) * m);
   q   = (double *) malloc (sizeof (double) * m);
