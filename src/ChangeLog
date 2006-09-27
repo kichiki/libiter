@@ -1,5 +1,8 @@
 2006-09-26  Kengo Ichiki  <ichiki@tpr60>
 
+	* Makefile.am: 1.2 2006/09/26 18:06:07 ichiki Exp
+	add 'include_HEADERS' to install 'libiter.h'.
+
 	* libiter.h: 2.5 2006/09/26 17:14:32 ichiki Exp
 	update.
 
