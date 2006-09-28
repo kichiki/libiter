@@ -1,3 +1,28 @@
+2006-09-28  Kengo Ichiki  <ichiki@tpr60>
+
+	* Makefile.am: 1.3 2006/09/28 04:28:32 kichiki Exp
+	libiter.c is added.
+
+	* libiter.h: 2.6 2006/09/28 04:27:35 kichiki Exp
+	struct iter is added.
+	overall wrapper routine is introduced.
+	all other routines are removed from this header file.
+
+	* libiter.c: 1.1 2006/09/28 04:26:50 kichiki Exp
+	initial revision.
+
+	* gmres.h: 2.6 2006/09/28 04:25:39 kichiki Exp
+	* gmres.c: 2.7 2006/09/28 04:25:11 kichiki Exp
+	(solve_iter_gmres): removed. use general wrapper solve_iter() instead.
+
+	* orthomin.h: 2.5 2006/09/28 04:24:25 kichiki Exp
+	* orthomin.c: 2.5 2006/09/28 04:23:36 kichiki Exp
+	(solve_iter_otmk): removed. use general wrapper solve_iter() instead.
+
+	* bi-cgstab.h: 2.5 2006/09/28 04:22:42 kichiki Exp
+	* bi-cgstab.c: 2.6 2006/09/28 04:21:36 kichiki Exp
+	(solve_iter_stab): removed. use general wrapper solve_iter() instead.
+
 2006-09-26  Kengo Ichiki  <ichiki@tpr60>
 
 	* Makefile.am: 1.2 2006/09/26 18:06:07 ichiki Exp
