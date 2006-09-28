@@ -1,6 +1,6 @@
 /* wrapper for iterative solver routines
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bi-cgstab.c,v 2.5 2006/09/26 17:10:42 ichiki Exp $
+ * $Id: bi-cgstab.c,v 2.6 2006/09/28 04:21:36 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -32,56 +32,6 @@
 
 #include "bi-cgstab.h"
 
-/** global variables **/
-int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
-
-
-/* wrapper routine for solvers below
- * INPUT
- *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
- *   b [n] : given vector
- *   atimes (n, x, b, user_data) : routine to calc A.x and return b[]
- *   user_data : pointer to be passed to solver and atimes routines
- *   solver : solver routine to call
- *   it_max : max # iterations
- *   log10_eps : log10(eps), where eps is the accuracy
- * OUTPUT
- *   x [n] : solution
- */
-void
-solve_iter_stab (int n, const double *b,
-		 double *x,
-		 void (*atimes) (int, const double *, double *, void *),
-		 void * user_data,
-		 void (*solver) (int, const double *, double *, int,
-				 double, double, int *, double *,
-				 void (*)
-				 (int, const double *, double *, void *),
-				 void *),
-		 int it_max, double log10_eps)
-{
-  extern int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
-  int i;
-
-  double hnor;
-  double residual;
-  int iter;
-
-
-  hnor = 0.0;
-  for (i = 0; i < n; ++i)
-    hnor += b [i] * b [i];
-  if (hnor != 0.0)
-    hnor = log10 (hnor) / 2.0;
-
-  solver (n, b, x,
-	  it_max, log10_eps,
-	  hnor, &iter, &residual, atimes,
-	  user_data);
-
-  if (ITER_stab_debug)
-    fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
-}
 
 /* bi-cgstab method
  *   m : dimension of the problem

@@ -1,7 +1,7 @@
 /* header file of bi-cgstab.c --
  * wrapper for iterative solver routines
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bi-cgstab.h,v 2.4 2006/09/26 17:10:06 ichiki Exp $
+ * $Id: bi-cgstab.h,v 2.5 2006/09/28 04:22:42 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -28,20 +28,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/** global variables **/
-extern int ITER_stab_debug; /* [0|1]: [not print/print] iter and res */
-
-void
-solve_iter_stab (int n, const double *b,
-		 double *x,
-		 void (*atimes) (int, const double *, double *, void *),
-		 void * user_data,
-		 void (*solver) (int, const double *, double *, int,
-				 double, double, int *, double *,
-				 void (*)
-				 (int, const double *, double *, void *),
-				 void *),
-		 int it_max, double log10_eps);
 void
 sta (int m, const double *b, double *x, int kend,
      double eps, double hnor,
