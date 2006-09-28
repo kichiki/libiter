@@ -1,7 +1,7 @@
 /* header file of orthomin.c --
  * orthomin scheme
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: orthomin.h,v 2.4 2006/09/26 17:09:27 ichiki Exp $
+ * $Id: orthomin.h,v 2.5 2006/09/28 04:24:25 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -27,22 +27,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/** global variables **/
-extern int ITER_otmk_debug; /* [0|1]: [not print/print] iter and res */
-
-void
-solve_iter_otmk (int n, const double *b,
-		 double *x,
-		 void (*atimes) (int, const double *, double *, void *),
-		 void * user_data,
-		 void (*solver) (int, const double *, double *,
-				 int, int, double,
-				 double, int *, double *,
-				 void (*)
-				 (int, const double *, double *, void *),
-				 void *),
-		 int it_max, double log10_eps,
-		 int it_restart);
 void
 otmk (int m, const double *b, double *x,
       int kres, int kend,
