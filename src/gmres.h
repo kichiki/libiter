@@ -1,7 +1,7 @@
 /* header file of mygmres.c --
  * generalized minimum residual method
  * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.h,v 2.5 2006/09/26 17:08:52 ichiki Exp $
+ * $Id: gmres.h,v 2.6 2006/09/28 04:25:39 kichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -22,27 +22,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/** global variables **/
-extern int ITER_gmres_debug; /* [0|1]: [not print/print] iter and res */
-
-
-/* wrapper routine for gmres_m ()
- * INPUT
- *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
- *   b [n] : given vector
- *   atimes (n, x, b) : routine to calc A.x and return b[]
- *   it_max : max # iterations
- *   it_restart : # iterations to restart
- *   eps : the accuracy
- * OUTPUT
- *   x [n] : solution
- */
-void
-solve_iter_gmres (int n,
-		  const double *b, double *x,
-		  void (*atimes) (int, const double *, double *, void *),
-		  void * user_data,
-		  int it_max, int it_restart, double eps);
 void
 gmres_m (int n, const double *f, double *x,
 	 int m, double tol, int itmax,

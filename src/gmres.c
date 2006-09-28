@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.c,v 2.6 2006/09/26 16:51:42 ichiki Exp $
+ * $Id: gmres.c,v 2.7 2006/09/28 04:25:11 kichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -27,42 +27,6 @@
 
 #include "gmres.h"
 
-/** global variables **/
-int ITER_gmres_debug; /* [0|1]: [not print/print] iter and res */
-
-
-/* wrapper routine for gmres_m ()
- * INPUT
- *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
- *   b [n] : given vector
- *   atimes (n, x, b) : routine to calc A.x and return b[]
- *   it_max : max # iterations
- *   it_restart : # iterations to restart
- *   eps : the accuracy
- * OUTPUT
- *   x [n] : solution
- */
-void
-solve_iter_gmres (int n,
-		  const double *b, double *x,
-		  void (*atimes) (int, const double *, double *, void *),
-		  void * user_data,
-		  int it_max, int it_restart, double eps)
-{
-  extern int ITER_gmres_debug; /* [0|1]: [not print/print] iter and res */
-  double residual;
-  int iter;
-
-
-  gmres_m (n, b, x,
-	   it_restart, eps, it_max,
-	   &iter, &residual,
-	   atimes,
-	   user_data);
-
-  if (ITER_gmres_debug)
-    fprintf (stderr, "# iter=%d res=%e\n", iter, residual);
-}
 
 /* m  : number of iteration */
 /* nn : dimension of matrix r [] (nnxnn) */
