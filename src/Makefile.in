@@ -11,7 +11,7 @@
 # PARTICULAR PURPOSE.
 
 # Build a libtool library, libiter.la for installation in libdir.
-# $Id: Makefile.in,v 2.1 2006/09/27 01:04:42 ichiki Exp $
+# $Id: Makefile.in,v 2.2 2006/10/05 21:54:32 ichiki Exp $
 
 
 SHELL = @SHELL@
@@ -90,14 +90,13 @@ VERSION = @VERSION@
 
 lib_LTLIBRARIES = libiter.la
 
-libiter_la_SOURCES =    myblas.c   gmres.c   bi-cgstab.c   orthomin.c
+libiter_la_SOURCES =    libiter.c   myblas.c   gmres.c   bi-cgstab.c   orthomin.c
 
 
-libiter_la_LDFLAGS = -version-info 0:0:0
+libiter_la_LDFLAGS = -version-info 1:0:0
 
 include_HEADERS = libiter.h
 
-# CFLAGS = -Wall -O3 -mtune=pentium
 AM_CFLAGS = -Wall -O3 -mtune=pentium
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -110,7 +109,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libiter_la_LIBADD = 
-libiter_la_OBJECTS =  myblas.lo gmres.lo bi-cgstab.lo orthomin.lo
+libiter_la_OBJECTS =  libiter.lo myblas.lo gmres.lo bi-cgstab.lo \
+orthomin.lo
 CFLAGS = @CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -125,10 +125,10 @@ configure.in install-sh ltmain.sh missing mkinstalldirs
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gtar
 GZIP_ENV = --best
-DEP_FILES =  .deps/bi-cgstab.P .deps/gmres.P .deps/myblas.P \
-.deps/orthomin.P
+DEP_FILES =  .deps/bi-cgstab.P .deps/gmres.P .deps/libiter.P \
+.deps/myblas.P .deps/orthomin.P
 SOURCES = $(libiter_la_SOURCES)
 OBJECTS = $(libiter_la_OBJECTS)
 
