@@ -1,0 +1,8 @@
+2006-10-09  Kengo Ichiki  <ichiki@tpr60>
+
+	* restructure the whole directory. all source codes (*.c and *.h)
+	are in src directory.
+
+2006-10-08  Kengo Ichiki  <ichiki@tpr60>
+
+	* upgrade for automake/autoconf tools to automake19 and autoconf259.
