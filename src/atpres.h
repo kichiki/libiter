@@ -1,7 +1,7 @@
 /* header file for atpres.c --
  * ATPRES -- Weiss, Algorithm 5
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: atpres.h,v 2.1 2006/10/09 19:56:51 ichiki Exp $
+ * $Id: atpres.h,v 2.2 2006/10/09 22:01:37 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 
 void
 atpres (int n, const double *b, double *x,
-	int maxiter, double eps,
+	double eps, int maxiter,
 	int *iter, double *res,
 	void (*atimes) (int, const double *, double *, void *),
 	void (*atimes_t) (int, const double *, double *, void *),

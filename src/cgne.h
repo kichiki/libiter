@@ -1,7 +1,7 @@
 /* header file for atpres.c --
  * CGNE -- Weiss, Algorithm 5
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgne.h,v 2.1 2006/10/09 19:57:33 ichiki Exp $
+ * $Id: cgne.h,v 2.2 2006/10/09 22:02:34 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 
 void
 cgne (int n, const double *b, double *x,
-      int maxiter, double eps,
+      double eps, int maxiter,
       int *iter, double *res,
       void (*atimes) (int, const double *, double *, void *),
       void (*atimes_t) (int, const double *, double *, void *),
