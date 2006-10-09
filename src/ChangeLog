@@ -1,3 +1,13 @@
+2006-10-09  Kengo Ichiki  <ichiki@tpr60>
+
+	* atpres.h: 2.1 2006/10/09 19:56:51 ichiki Exp
+	* cgne.h: 2.1 2006/10/09 19:57:33 ichiki Exp
+	initial revision.
+
+	* atpres.c: 1.2 2006/10/09 20:03:02 ichiki Exp
+	* cgne.c: 1.2 2006/10/09 20:03:02 ichiki Exp
+	import into libiter from working directory.
+
 2006-09-28  Kengo Ichiki  <ichiki@tpr60>
 
 	* Makefile.am: 1.3 2006/09/28 04:28:32 kichiki Exp
