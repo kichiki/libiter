@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- gmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.h,v 2.6 2006/09/28 04:27:35 kichiki Exp $
+ * $Id: libiter.h,v 2.7 2006/10/09 22:00:40 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,7 +51,12 @@ iter_free (struct iter * param);
  *   user_data : pointer to be passed to solver and atimes routines
  *   it_param : parameters for iterative solvers
  *              solver : string indicating the solver
- *                       sta, sta2, gpb, otmk, or gmres (default)
+ *                "steepest" : steepest descent method
+ *                "cg"       : conjugate gradient
+ *                "cgs"      : conjugate gradient squared
+ *                "bicgstab" : bi-conjugate gradient stabilized
+ *                "sta", "sta2", "gpb", "otmk" :
+ *                "gmres"    : generalized minimum residual method  (default)
  *              eps and log10_eps
  *              max (and restart)
  * OUTPUT

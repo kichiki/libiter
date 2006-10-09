@@ -1,6 +1,6 @@
 /* overall wrapper for iterative solver routines
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.c,v 1.1 2006/09/28 04:26:50 kichiki Exp $
+ * $Id: libiter.c,v 1.2 2006/10/09 22:00:14 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,11 @@
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
 #include <string.h> /* strcmp() */
+
+#include "steepest.h"
+#include "cg.h"
+#include "cgs.h"
+#include "bicgstab.h"
 
 #include "gmres.h"
 #include "bi-cgstab.h"
@@ -78,7 +83,12 @@ iter_free (struct iter * param)
  *   user_data : pointer to be passed to solver and atimes routines
  *   it_param : parameters for iterative solvers
  *              solver : string indicating the solver
- *                       sta, sta2, gpb, otmk, or gmres (default)
+ *                "steepest" : steepest descent method
+ *                "cg"       : conjugate gradient
+ *                "cgs"      : conjugate gradient squared
+ *                "bicgstab" : bi-conjugate gradient stabilized
+ *                "sta", "sta2", "gpb", "otmk" :
+ *                "gmres"    : generalized minimum residual method  (default)
  *              eps and log10_eps
  *              max (and restart)
  * OUTPUT
@@ -110,7 +120,40 @@ solve_iter (int n, const double *b,
     }
 
 
-  if (strcmp (it_param->solver, "sta") == 0)
+  if (strcmp (it_param->solver, "steepest") == 0)
+    {
+      steepest
+	(n, b, x,
+	 it_param->eps,
+	 it_param->max,
+	 &iter, &residual,
+	 atimes, user_data);
+    }
+  else if (strcmp (it_param->solver, "cg") == 0)
+    {
+      cg (n, b, x,
+	  it_param->eps,
+	  it_param->max,
+	  &iter, &residual,
+	  atimes, user_data);
+    }
+  else if (strcmp (it_param->solver, "cgs") == 0)
+    {
+      cgs (n, b, x,
+	   it_param->eps,
+	   it_param->max,
+	   &iter, &residual,
+	   atimes, user_data);
+    }
+  else if (strcmp (it_param->solver, "bicgstab") == 0)
+    {
+      bicgstab (n, b, x,
+		it_param->eps,
+		it_param->max,
+		&iter, &residual,
+		atimes, user_data);
+    }
+  else if (strcmp (it_param->solver, "sta") == 0)
     {
       sta (n, b, x,
 	   it_param->max,
