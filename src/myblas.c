@@ -1,6 +1,6 @@
 /* Excerpted from BLAS package
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: myblas.c,v 1.4 2006/09/26 16:48:57 ichiki Exp $
+ * $Id: myblas.c,v 1.5 2006/10/09 21:58:18 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@
 
 #include "myblas.h"
 
+
 /*    constant times a vector plus a vector.
  *    uses unrolled loops for increments equal to one.
  *    jack dongarra, linpack, 3/11/78.
@@ -34,7 +35,7 @@
  *    dy [n * incy] : vector
  */
 void
-daxpy (int n, double da, const double *dx, int incx, double *dy, int incy)
+my_daxpy (int n, double da, const double *dx, int incx, double *dy, int incy)
 {
   int i, ix, iy;
   int m;
@@ -91,9 +92,9 @@ daxpy (int n, double da, const double *dx, int incx, double *dy, int incy)
  *    dz [n * incy] : vector
  */
 void
-daxpyz (int n, double da, const double *dx, int incx,
-	const double *dy, int incy,
-	double *dz, int incz)
+my_daxpyz (int n, double da, const double *dx, int incx,
+	   const double *dy, int incy,
+	   double *dz, int incz)
 {
   int i, ix, iy;
   int m;
@@ -152,8 +153,8 @@ daxpyz (int n, double da, const double *dx, int incx,
  *    dy [n * incy] : vector
  */
 void
-dcopy (int n, const double *dx, int incx,
-       double * dy, int incy)
+my_dcopy (int n, const double *dx, int incx,
+	  double * dy, int incy)
 {
   int i, ix, iy;
   int m;
@@ -213,7 +214,7 @@ dcopy (int n, const double *dx, int incx,
  *     Sven Hammarling, Nag Ltd.
  */
 double
-dnrm2_ (int n, const double *x, int incx)
+my_dnrm2_ (int n, const double *x, int incx)
 {
   /* .. Parameters .. */
   static double one = 1.0;
@@ -257,7 +258,7 @@ dnrm2_ (int n, const double *x, int incx)
 }
 
 double
-dnrm2 (int n, const double *x, int incx)
+my_dnrm2 (int n, const double *x, int incx)
 {
   int i;
   int ix;
@@ -311,7 +312,7 @@ dnrm2 (int n, const double *x, int incx)
  * OUTPUT (return value)
  */
 double
-ddot (int n, const double *dx, int incx, const double *dy, int incy)
+my_ddot (int n, const double *dx, int incx, const double *dy, int incy)
 {
   double dtemp;
   int i, ix, iy;
@@ -372,7 +373,7 @@ ddot (int n, const double *dx, int incx, const double *dy, int incy)
  * calc dx [i] = da * dx [i]
  */
 void
-dscal (int n, double da, double *dx, int incx)
+my_dscal (int n, double da, double *dx, int incx)
 {
   int i, m, nincx;
 
@@ -419,7 +420,7 @@ dscal (int n, double da, double *dx, int incx)
  * calc dz [i] = da * dx [i]
  */
 void
-dscalz (int n, double da, const double *dx, int incx,
+my_dscalz (int n, double da, const double *dx, int incx,
 	double *dz, int incz)
 {
   int i, m, nincx;

@@ -1,7 +1,7 @@
 /* header file for blas.c --
  * Excerpted from BLAS package
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: myblas.h,v 1.3 2006/09/26 17:08:07 ichiki Exp $
+ * $Id: myblas.h,v 1.4 2006/10/09 21:58:40 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,6 +17,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+#ifndef	_MYBLAS_H_
+#define	_MYBLAS_H_
+
 
 /*    constant times a vector plus a vector.
  *    uses unrolled loops for increments equal to one.
@@ -32,7 +35,7 @@
  *    dy [n * incy] : vector
  */
 void
-daxpy (int n, double da, const double *dx, int incx, double *dy, int incy);
+my_daxpy (int n, double da, const double *dx, int incx, double *dy, int incy);
 
 /* calc dz [i] = dy [i] + da * dx [i]
  * INPUT
@@ -44,9 +47,9 @@ daxpy (int n, double da, const double *dx, int incx, double *dy, int incy);
  *    dz [n * incy] : vector
  */
 void
-daxpyz (int n, double da, const double *dx, int incx,
-	const double *dy, int incy,
-	double *dz, int incz);
+my_daxpyz (int n, double da, const double *dx, int incx,
+	   const double *dy, int incy,
+	   double *dz, int incz);
 
 /*     copies a vector, x, to a vector, y.
  *     uses unrolled loops for increments equal to one.
@@ -60,8 +63,8 @@ daxpyz (int n, double da, const double *dx, int incx,
  *    dy [n * incy] : vector
  */
 void
-dcopy (int n, const double *dx, int incx,
-       double * dy, int incy);
+my_dcopy (int n, const double *dx, int incx,
+	  double * dy, int incy);
 
 /*  DNRM2 returns the euclidean norm of a vector via the function
  *  name, so that
@@ -73,10 +76,10 @@ dcopy (int n, const double *dx, int incx,
  *     Sven Hammarling, Nag Ltd.
  */
 double
-dnrm2_ (int n, const double *x, int incx);
+my_dnrm2_ (int n, const double *x, int incx);
 
 double
-dnrm2 (int n, const double *x, int incx);
+my_dnrm2 (int n, const double *x, int incx);
 
 /*     forms the dot product of two vectors.
  *     uses unrolled loops for increments equal to one.
@@ -90,7 +93,7 @@ dnrm2 (int n, const double *x, int incx);
  * OUTPUT (return value)
  */
 double
-ddot (int n, const double *dx, int incx, const double *dy, int incy);
+my_ddot (int n, const double *dx, int incx, const double *dy, int incy);
 
 /*     scales a vector by a constant.
  *     uses unrolled loops for increment equal to one.
@@ -100,7 +103,7 @@ ddot (int n, const double *dx, int incx, const double *dy, int incy);
  * calc dx [i] = da * dx [i]
  */
 void
-dscal (int n, double da, double *dx, int incx);
+my_dscal (int n, double da, double *dx, int incx);
 /*     scales a vector by a constant.
  *     uses unrolled loops for increment equal to one.
  *     jack dongarra, linpack, 3/11/78.
@@ -109,5 +112,8 @@ dscal (int n, double da, double *dx, int incx);
  * calc dz [i] = da * dx [i]
  */
 void
-dscalz (int n, double da, const double *dx, int incx,
-	double *dz, int incz);
+my_dscalz (int n, double da, const double *dx, int incx,
+	   double *dz, int incz);
+
+
+#endif /* !_MYBLAS_H_ */
