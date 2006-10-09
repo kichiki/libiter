@@ -1,5 +1,23 @@
 2006-10-09  Kengo Ichiki  <ichiki@tpr60>
 
+	* cgne.h: 2.2 2006/10/09 22:02:34 ichiki Exp
+	* cgne.c: 1.3 2006/10/09 22:02:11 ichiki Exp
+	* atpres.h: 2.2 2006/10/09 22:01:37 ichiki Exp
+	* atpres.c: 1.3 2006/10/09 22:01:17 ichiki Exp
+	change the order of arguments.
+
+	* libiter.h: 2.7 2006/10/09 22:00:40 ichiki Exp
+	* libiter.c: 1.2 2006/10/09 22:00:14 ichiki Exp
+	(solve_iter): add newly imported schemes -- steepest, cg, and
+	bicgstab (another implementation).
+
+	* myblas.h: 1.4 2006/10/09 21:58:40 ichiki Exp
+	* myblas.c: 1.5 2006/10/09 21:58:18 ichiki Exp
+	change the names of functions adding 'my_' prefix.
+
+	* gmres.c: 2.8 2006/10/09 21:56:59 ichiki Exp
+	add conditions for BLAS libraries.
+
 	* atpres.h: 2.1 2006/10/09 19:56:51 ichiki Exp
 	* cgne.h: 2.1 2006/10/09 19:57:33 ichiki Exp
 	initial revision.
