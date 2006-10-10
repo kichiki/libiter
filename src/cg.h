@@ -2,7 +2,7 @@
  * Classical CG method -- Weiss' Algorithm 2
  * my implementation of Classical CG method
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cg.h,v 2.1 2006/10/09 20:09:24 ichiki Exp $
+ * $Id: cg.h,v 2.2 2006/10/10 18:07:32 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,12 +21,14 @@
 #ifndef	_CG_H_
 #define	_CG_H_
 
+
+/* Classical CG method -- Weiss' Algorithm 2
+ */
 void
 cg (int n, const double *b, double *x,
-    double tol, int itmax,
-    int *iter, double *res,
     void (*atimes) (int, const double *, double *, void *),
-    void * user_data);
+    void * user_data,
+    struct iter * it_param);
 
 
 #endif /* !_CG_H_ */

@@ -1,6 +1,6 @@
 /* BiCGSTAB - Weiss, Algorithm 12
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bicgstab.h,v 2.1 2006/10/09 20:09:24 ichiki Exp $
+ * $Id: bicgstab.h,v 2.2 2006/10/10 18:09:24 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,12 +20,13 @@
 #define	_BICGSTAB_H_
 
 
+/* Ref: Weiss, Algorithm 12 BiCGSTAB
+ */
 void
 bicgstab (int n, const double *b, double *x,
-	  double tol, int itmax,
-	  int *iter, double *res,
 	  void (*atimes) (int, const double *, double *, void *),
-	  void * user_data);
+	  void * user_data,
+	  struct iter * it_param);
 
 
 #endif /* !_BICGSTAB_H_ */

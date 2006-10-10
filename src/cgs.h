@@ -1,7 +1,7 @@
 /* header file for cgs.c --
  * CGS -- Weiss, Algorithm 11
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgs.h,v 2.1 2006/10/09 20:09:24 ichiki Exp $
+ * $Id: cgs.h,v 2.2 2006/10/10 18:08:28 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,11 +21,12 @@
 #define	_CGS_H_
 
 
+/* Ref: Weiss, Algorithm 11 CGS
+ */
 void
 cgs (int n, const double *b, double *x,
-     double tol, int itmax,
-     int *iter, double *res,
      void (*atimes) (int, const double *, double *, void *),
-     void * user_data);
+     void * user_data,
+     struct iter * it_param);
 
 #endif /* !_CGS_H_ */
