@@ -1,7 +1,7 @@
 /* header file of mygmres.c --
  * generalized minimum residual method
  * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.h,v 2.6 2006/09/28 04:25:39 kichiki Exp $
+ * $Id: gmres.h,v 2.7 2006/10/10 18:11:20 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -21,16 +21,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+#ifndef	_GMRES_H_
+#define	_GMRES_H_
 
 void
 gmres_m (int n, const double *f, double *x,
-	 int m, double tol, int itmax,
-	 int *iter, double *res,
 	 void (*myatimes) (int, const double *, double *, void *),
-	 void * user_data);
+	 void * user_data,
+	 struct iter * it_param);
 void
 gmres (int n, const double *f, double *x,
-       double tol, int itmax,
-       int *iter, double *res,
        void (*myatimes) (int, const double *, double *, void *),
-       void * user_data);
+       void * user_data,
+       struct iter * it_param);
+
+
+#endif /* !_GMRES_H_ */

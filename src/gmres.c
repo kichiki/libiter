@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.c,v 2.8 2006/10/09 21:56:59 ichiki Exp $
+ * $Id: gmres.c,v 2.9 2006/10/10 18:10:05 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -25,6 +25,7 @@
 #include <stdlib.h> /* malloc (), free() */
 #include <stdio.h>
 #include <math.h>
+#include "libiter.h"
 
 
 #ifdef HAVE_CBLAS_H
@@ -92,11 +93,17 @@ back_sub (int m, int nn,
 }
 void
 gmres_m (int n, const double *f, double *x,
-	 int m, double tol, int itmax,
-	 int *iter, double *res,
 	 void (*myatimes) (int, const double *, double *, void *),
-	 void * user_data)
+	 void * user_data,
+	 struct iter * it_param)
 {
+  int m;
+  double tol;
+  int itmax;
+
+  int iter;
+  double res = 0.0;
+
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
   /* m: # of iteration at once */
@@ -120,6 +127,10 @@ gmres_m (int n, const double *f, double *x,
 #endif // !HAVE_CBLAS_H
 
 
+  m = it_param->restart;
+  itmax = it_param->max;
+  tol = it_param->eps;
+
   v   = (double *) malloc (sizeof (double) * (m + 1) * n);
   h   = (double *) malloc (sizeof (double) * m * m);
   g   = (double *) malloc (sizeof (double) * m + 1);
@@ -127,7 +138,7 @@ gmres_m (int n, const double *f, double *x,
   s   = (double *) malloc (sizeof (double) * m);
 
 
-  (*iter) = 0;
+  iter = 0;
   /* 1. start: */
   /* compute r0 */
   /* compute v1 */
@@ -170,9 +181,9 @@ gmres_m (int n, const double *f, double *x,
 
 
   /* main loop */
-  while ((*iter) <= itmax)
+  while (iter <= itmax)
     {
-      ++(*iter);
+      ++iter;
       /* 2. iterate: */
       for (j = 0; j < m; j ++)
 	{
@@ -274,10 +285,15 @@ gmres_m (int n, const double *f, double *x,
 	}
 
       /* 4. restart */
-      (*res) = fabs (g [j/*m*/]); /* residual */
-      /*fprintf (stderr, "# iter %d res %e\n", *iter, *res);*/
+      res = fabs (g [j/*m*/]); /* residual */
+      /*fprintf (stderr, "# iter %d res %e\n", iter, *res);*/
       /* if satisfied, */
-      if ((*res) <= tol) break;
+      if (it_param->debug == 2)
+	{
+	  fprintf (it_param->out, "libiter-gmres(%d) %d %d %e\n",
+		   m, iter, j, res*res);
+	}
+      if (res <= tol) break;
       /* else */
       /* compute r_m */
       myatimes (n, x, v + 0, user_data);
@@ -319,23 +335,31 @@ gmres_m (int n, const double *f, double *x,
 #endif // !HAVE_CBLAS_H
     }
 
-  /* adjust iter */
-  (*iter) *= m;
-
   free (v);
   free (h);
   free (g);
   free (c);
   free (s);
+
+  /* adjust iter */
+  iter *= m;
+
+  if (it_param->debug == 1)
+    {
+      fprintf (it_param->out, "libiter-cg %d %e\n", iter, res*res);
+    }
 }
 
 void
 gmres (int n, const double *f, double *x,
-       double tol, int itmax,
-       int *iter, double *res,
        void (*myatimes) (int, const double *, double *, void *),
-       void * user_data)
+       void * user_data,
+       struct iter * it_param)
 {
+  double tol;
+
+  double res = 0.0;
+
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
   int i, j, k, m;
@@ -358,7 +382,8 @@ gmres (int n, const double *f, double *x,
 #endif // !HAVE_CBLAS_H
 
 
-  m = itmax;
+  m = it_param->max;
+  tol = it_param->eps;
 
   v   = (double *) malloc (sizeof (double) * (m + 1) * n);
   h   = (double *) malloc (sizeof (double) * m * m);
@@ -495,16 +520,19 @@ gmres (int n, const double *f, double *x,
       g [j    ] = c [j] * g0;
       g [j + 1] = s [j] * g0;
 
-      (*res) = fabs (g [j + 1]); /* residual */
-      fprintf (stderr, "# iter %d res %e\n", j, *res);
+      res = fabs (g [j + 1]); /* residual */
+      if (it_param->debug == 2)
+	{
+	  fprintf (it_param->out, "libiter-gmres %d %e\n",
+		   j, res*res);
+	}
       /* if satisfied, */
-      if ((*res) <= tol)
+      if (res <= tol)
 	{
 	  j ++; /* this is because ++(*iter) in gmres(m) */
 	  break;
 	}
     }
-  (*iter) = j;
 
   /* 3. form the approximate solution */
   /* solve y_k */
@@ -523,5 +551,10 @@ gmres (int n, const double *f, double *x,
   free (g);
   free (c);
   free (s);
+
+  if (it_param->debug == 1)
+    {
+      fprintf (it_param->out, "libiter-gmres %d %e\n", j, res*res);
+    }
 }
 
