@@ -1,6 +1,6 @@
 /* overall wrapper for iterative solver routines
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.c,v 1.2 2006/10/09 22:00:14 ichiki Exp $
+ * $Id: libiter.c,v 1.3 2006/10/10 18:12:41 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,8 @@
 #include <stdlib.h> /* malloc(), free() */
 #include <string.h> /* strcmp() */
 
+#include "libiter.h"
+
 #include "steepest.h"
 #include "cg.h"
 #include "cgs.h"
@@ -30,21 +32,27 @@
 #include "bi-cgstab.h"
 #include "orthomin.h"
 
-#include "libiter.h"
-
 
 /* initialize parameters
+ * INPUT
  *   solver : string indicating the solver
  *            sta, sta2, gpb, otmk, or gmres (default)
  *   eps and log10_eps
  *   max (and restart)
+ *   debug = 0 : no debug info
+ *         = 1 : iteration numbs and residue
+ *         = 2 : residue for each iteration step
+ *   out   : FILE * to output debug info.
+ * OUTPUT
+ *   (struct iter *) returned value :
  */
 struct iter *
 iter_init (const char * solver,
 	   int max,
 	   int restart,
 	   double eps,
-	   int debug)
+	   int debug,
+	   FILE * out)
 {
   struct iter * param = NULL;
 
@@ -58,6 +66,7 @@ iter_init (const char * solver,
   param->eps = eps;
   param->log10_eps = log10 (eps);
   param->debug = debug;
+  param->out   = out;
 
   return (param);
 }
@@ -124,34 +133,26 @@ solve_iter (int n, const double *b,
     {
       steepest
 	(n, b, x,
-	 it_param->eps,
-	 it_param->max,
-	 &iter, &residual,
-	 atimes, user_data);
+	 atimes, user_data,
+	 it_param);
     }
   else if (strcmp (it_param->solver, "cg") == 0)
     {
       cg (n, b, x,
-	  it_param->eps,
-	  it_param->max,
-	  &iter, &residual,
-	  atimes, user_data);
+	  atimes, user_data,
+	  it_param);
     }
   else if (strcmp (it_param->solver, "cgs") == 0)
     {
       cgs (n, b, x,
-	   it_param->eps,
-	   it_param->max,
-	   &iter, &residual,
-	   atimes, user_data);
+	   atimes, user_data,
+	   it_param);
     }
   else if (strcmp (it_param->solver, "bicgstab") == 0)
     {
       bicgstab (n, b, x,
-		it_param->eps,
-		it_param->max,
-		&iter, &residual,
-		atimes, user_data);
+		atimes, user_data,
+		it_param);
     }
   else if (strcmp (it_param->solver, "sta") == 0)
     {
@@ -160,6 +161,12 @@ solve_iter (int n, const double *b,
 	   it_param->log10_eps,
 	   hnor, &iter, &residual,
 	   atimes, user_data);
+
+      if (it_param->debug != 0)
+	{
+	  fprintf (it_param->out, "libiter-sta: iter=%d res=%e\n",
+		   iter, residual);
+	}
     }
   else if (strcmp (it_param->solver, "sta2") == 0)
     {
@@ -168,6 +175,12 @@ solve_iter (int n, const double *b,
 	    it_param->log10_eps,
 	    hnor, &iter, &residual,
 	    atimes, user_data);
+
+      if (it_param->debug != 0)
+	{
+	  fprintf (it_param->out, "libiter-sta2: iter=%d res=%e\n",
+		   iter, residual);
+	}
     }
   else if (strcmp (it_param->solver, "gpb") == 0)
     {
@@ -176,6 +189,12 @@ solve_iter (int n, const double *b,
 	   it_param->log10_eps,
 	   hnor, &iter, &residual,
 	   atimes, user_data);
+
+      if (it_param->debug != 0)
+	{
+	  fprintf (it_param->out, "libiter-gpb: iter=%d res=%e\n",
+		   iter, residual);
+	}
     }
   else if (strcmp (it_param->solver, "otmk") == 0)
     {
@@ -185,19 +204,17 @@ solve_iter (int n, const double *b,
 	    it_param->log10_eps,
 	    hnor, &iter, &residual,
 	    atimes, user_data);
+
+      if (it_param->debug != 0)
+	{
+	  fprintf (it_param->out, "libiter-otmk: iter=%d res=%e\n",
+		   iter, residual);
+	}
     }
   else //if (strcmp (it_param->solver, "gmres") == 0)
     {
       gmres_m (n, b, x,
-	       it_param->restart,
-	       it_param->eps,
-	       it_param->max,
-	       &iter, &residual,
-	       atimes, user_data);
-    }
-
-  if (it_param->debug != 0)
-    {
-      fprintf (stderr, "libiter: iter=%d res=%e\n", iter, residual);
+	       atimes, user_data,
+	       it_param);
     }
 }
