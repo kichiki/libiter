@@ -1,6 +1,6 @@
 /* CGNE -- Weiss, Algorithm 6
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgne.c,v 1.3 2006/10/09 22:02:11 ichiki Exp $
+ * $Id: cgne.c,v 1.4 2006/10/10 19:53:27 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include <stdlib.h>
+#include <math.h>
 #include "myblas.h"
 
 

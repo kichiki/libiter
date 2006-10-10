@@ -1,6 +1,6 @@
 /* BiCGSTAB - Weiss, Algorithm 12
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bicgstab.c,v 2.2 2006/10/10 18:08:59 ichiki Exp $
+ * $Id: bicgstab.c,v 2.3 2006/10/10 19:53:27 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "libiter.h"
+
+
+/* CBLAS is a bit unstable for this scheme,
+ * so that here CBLAS is disabled.
+ */
+#ifdef HAVE_CBLAS_H
+# undef HAVE_CBLAS_H
+#endif /* HAVE_CBLAS_H */
 
 
 #ifdef HAVE_CBLAS_H
@@ -122,11 +130,11 @@ bicgstab (int n, const double *b, double *x,
   // initial guess
   cblas_dcopy (n, b, 1, x, 1);
   
-  atimes (n, x, r, user_data); // r = A.x
-  cblas_daxpy (n, -1.0, b, 1, r, 1); // r = A.x - b
+  atimes (n, x, r, user_data);       // r = A.x ...
+  cblas_daxpy (n, -1.0, b, 1, r, 1); //         - b
 
   cblas_dcopy (n, r, 1, rs, 1); // r* = r
-  cblas_dcopy (n, r, 1, p, 1); // p = r
+  cblas_dcopy (n, r, 1, p, 1);  // p  = r
 
   rho = cblas_ddot (n, rs, 1, r, 1); // rho = (r*, r)
 
@@ -134,18 +142,19 @@ bicgstab (int n, const double *b, double *x,
     {
       atimes (n, p, ap, user_data); // ap = A.p
       rsap = cblas_ddot (n, rs, 1, ap, 1); // rsap = (r*, A.p)
+
       delta = - rho / rsap;
 
-      cblas_dcopy (n, r, 1, s, 1); // s = r
-      cblas_daxpy (n, delta, ap, 1, s, 1); // s = r + delta A.p
+      cblas_dcopy (n, r, 1, s, 1);         // s = r ...
+      cblas_daxpy (n, delta, ap, 1, s, 1); //   + delta A.p
       atimes (n, s, t, user_data); // t = A.s
 
       st = cblas_ddot (n, s, 1, t, 1); // st = (s, t)
       t2 = cblas_ddot (n, t, 1, t, 1); // t2 = (t, t)
       gamma = - st / t2;
 
-      cblas_dcopy (n, s, 1, r, 1); // r = s
-      cblas_daxpy (n, gamma, t, 1, r, 1); // r = s + gamma t
+      cblas_dcopy (n, s, 1, r, 1);        // r = s ...
+      cblas_daxpy (n, gamma, t, 1, r, 1); //   + gamma t
 
       cblas_daxpy (n, delta, p, 1, x, 1); // x = x + delta p...
       cblas_daxpy (n, gamma, s, 1, x, 1); //       + gamma s
@@ -153,7 +162,9 @@ bicgstab (int n, const double *b, double *x,
       res2 = cblas_ddot (n, r, 1, r, 1);
       if (it_param->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-bicgstab %d %e\n", i, res2);
+	  fprintf (it_param->out,
+		   "libiter-bicgstab(cblas) %d %e\n",
+		   i, res2);
 	}
       if (res2 < tol2) break;
 
@@ -162,7 +173,7 @@ bicgstab (int n, const double *b, double *x,
       rho = rho1;
 
       cblas_daxpy (n, gamma, ap, 1, p, 1); // p = p + gamma A.p
-      cblas_dscal (n, beta, p, 1); // p = beta (p + gamma A.p)
+      cblas_dscal (n, beta, p, 1);         // p = beta (p + gamma A.p)
       cblas_daxpy (n, 1.0, r, 1, p, 1); // p = r + beta(p + gamma A.p)
     }
 
@@ -173,11 +184,11 @@ bicgstab (int n, const double *b, double *x,
   // initial guess
   dcopy_ (&n, b, &i_1, x, &i_1);
   
-  atimes (n, x, r, user_data); // r = A.x
-  daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); // r = A.x - b
+  atimes (n, x, r, user_data);          // r = A.x ...
+  daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); //         - b
 
   dcopy_ (&n, r, &i_1, rs, &i_1); // r* = r
-  dcopy_ (&n, r, &i_1, p, &i_1); // p = r
+  dcopy_ (&n, r, &i_1, p, &i_1);  // p  = r
 
   rho = ddot_ (&n, rs, &i_1, r, &i_1); // rho = (r*, r)
 
@@ -187,16 +198,16 @@ bicgstab (int n, const double *b, double *x,
       rsap = ddot_ (&n, rs, &i_1, ap, &i_1); // rsap = (r*, A.p)
       delta = - rho / rsap;
 
-      dcopy_ (&n, r, &i_1, s, &i_1); // s = r
-      daxpy_ (&n, &delta, ap, &i_1, s, &i_1); // s = r + delta A.p
+      dcopy_ (&n, r, &i_1, s, &i_1);          // s = r ...
+      daxpy_ (&n, &delta, ap, &i_1, s, &i_1); //   + delta A.p
       atimes (n, s, t, user_data); // t = A.s
 
       st = ddot_ (&n, s, &i_1, t, &i_1); // st = (s, t)
       t2 = ddot_ (&n, t, &i_1, t, &i_1); // t2 = (t, t)
       gamma = - st / t2;
 
-      dcopy_ (&n, s, &i_1, r, &i_1); // r = s
-      daxpy_ (&n, &gamma, t, &i_1, r, &i_1); // r = s + gamma t
+      dcopy_ (&n, s, &i_1, r, &i_1);         // r = s ...
+      daxpy_ (&n, &gamma, t, &i_1, r, &i_1); //   + gamma t
 
       daxpy_ (&n, &delta, p, &i_1, x, &i_1); // x = x + delta p...
       daxpy_ (&n, &gamma, s, &i_1, x, &i_1); //       + gamma s
@@ -204,7 +215,9 @@ bicgstab (int n, const double *b, double *x,
       res2 = ddot_ (&n, r, &i_1, r, &i_1);
       if (it_param->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-bicgstab %d %e\n", i, res2);
+	  fprintf (it_param->out,
+		   "libiter-bicgstab(blas) %d %e\n",
+		   i, res2);
 	}
       if (res2 < tol2) break;
 
@@ -213,7 +226,7 @@ bicgstab (int n, const double *b, double *x,
       rho = rho1;
 
       daxpy_ (&n, &gamma, ap, &i_1, p, &i_1); // p = p + gamma A.p
-      dscal_ (&n, &beta, p, &i_1); // p = beta (p + gamma A.p)
+      dscal_ (&n, &beta, p, &i_1);            // p = beta (p + gamma A.p)
       daxpy_ (&n, &d_1, r, &i_1, p, &i_1); // p = r + beta(p + gamma A.p)
     }
 
@@ -223,11 +236,11 @@ bicgstab (int n, const double *b, double *x,
   // initial guess
   my_dcopy (n, b, 1, x, 1);
   
-  atimes (n, x, r, user_data); // r = A.x
-  my_daxpy (n, -1.0, b, 1, r, 1); // r = A.x - b
+  atimes (n, x, r, user_data);    // r = A.x ...
+  my_daxpy (n, -1.0, b, 1, r, 1); //         - b
 
   my_dcopy (n, r, 1, rs, 1); // r* = r
-  my_dcopy (n, r, 1, p, 1); // p = r
+  my_dcopy (n, r, 1, p, 1);  // p = r
 
   rho = my_ddot (n, rs, 1, r, 1); // rho = (r*, r)
 
@@ -237,16 +250,16 @@ bicgstab (int n, const double *b, double *x,
       rsap = my_ddot (n, rs, 1, ap, 1); // rsap = (r*, A.p)
       delta = - rho / rsap;
 
-      my_dcopy (n, r, 1, s, 1); // s = r
-      my_daxpy (n, delta, ap, 1, s, 1); // s = r + delta A.p
+      my_dcopy (n, r, 1, s, 1);         // s = r ...
+      my_daxpy (n, delta, ap, 1, s, 1); //   + delta A.p
       atimes (n, s, t, user_data); // t = A.s
 
       st = my_ddot (n, s, 1, t, 1); // st = (s, t)
       t2 = my_ddot (n, t, 1, t, 1); // t2 = (t, t)
       gamma = - st / t2;
 
-      my_dcopy (n, s, 1, r, 1); // r = s
-      my_daxpy (n, gamma, t, 1, r, 1); // r = s + gamma t
+      my_dcopy (n, s, 1, r, 1);        // r = s ...
+      my_daxpy (n, gamma, t, 1, r, 1); //   + gamma t
 
       my_daxpy (n, delta, p, 1, x, 1); // x = x + delta p...
       my_daxpy (n, gamma, s, 1, x, 1); //       + gamma s
@@ -254,7 +267,9 @@ bicgstab (int n, const double *b, double *x,
       res2 = my_ddot (n, r, 1, r, 1);
       if (it_param->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-bicgstab %d %e\n", i, res2);
+	  fprintf (it_param->out,
+		   "libiter-bicgstab(myblas) %d %e\n",
+		   i, res2);
 	}
       if (res2 < tol2) break;
 
@@ -263,7 +278,7 @@ bicgstab (int n, const double *b, double *x,
       rho = rho1;
 
       my_daxpy (n, gamma, ap, 1, p, 1); // p = p + gamma A.p
-      my_dscal (n, beta, p, 1); // p = beta (p + gamma A.p)
+      my_dscal (n, beta, p, 1);         // p = beta (p + gamma A.p)
       my_daxpy (n, 1.0, r, 1, p, 1); // p = r + beta(p + gamma A.p)
     }
 
@@ -279,6 +294,6 @@ bicgstab (int n, const double *b, double *x,
 
   if (it_param->debug == 1)
     {
-      fprintf (it_param->out, "libiter-bicgstab %d %e\n", i, res2);
+      fprintf (it_param->out, "libiter-bicgstab it= %d res^2= %e\n", i, res2);
     }
 }

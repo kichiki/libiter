@@ -1,6 +1,6 @@
 /* CGS -- Weiss, Algorithm 11
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgs.c,v 2.2 2006/10/10 18:08:06 ichiki Exp $
+ * $Id: cgs.c,v 2.3 2006/10/10 19:53:27 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -293,6 +293,6 @@ cgs (int n, const double *b, double *x,
 
   if (it_param->debug == 1)
     {
-      fprintf (it_param->out, "libiter-cgs %d %e\n", i, res2);
+      fprintf (it_param->out, "libiter-cgs it= %d res^2= %e\n", i, res2);
     }
 }

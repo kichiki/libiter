@@ -177,7 +177,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
 # Build a libtool library, libiter.la for installation in libdir.
-# $Id: Makefile.in,v 2.3 2006/10/09 22:05:26 ichiki Exp $
+# $Id: Makefile.in,v 2.4 2006/10/10 19:53:27 ichiki Exp $
 lib_LTLIBRARIES = libiter.la
 libiter_la_SOURCES = \
 	libiter.c	\

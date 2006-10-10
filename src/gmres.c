@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.c,v 2.9 2006/10/10 18:10:05 ichiki Exp $
+ * $Id: gmres.c,v 2.10 2006/10/10 19:53:27 ichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -346,7 +346,8 @@ gmres_m (int n, const double *f, double *x,
 
   if (it_param->debug == 1)
     {
-      fprintf (it_param->out, "libiter-cg %d %e\n", iter, res*res);
+      fprintf (it_param->out, "libiter-gmres(%d) it= %d res^2= %e\n",
+	       m, iter, res*res);
     }
 }
 
@@ -554,7 +555,7 @@ gmres (int n, const double *f, double *x,
 
   if (it_param->debug == 1)
     {
-      fprintf (it_param->out, "libiter-gmres %d %e\n", j, res*res);
+      fprintf (it_param->out, "libiter-gmres it= %d res^2= %e\n", j, res*res);
     }
 }
 

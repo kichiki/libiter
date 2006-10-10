@@ -1,6 +1,6 @@
 /* Classical CG method -- Weiss' Algorithm 2
  * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cg.c,v 2.2 2006/10/10 18:07:10 ichiki Exp $
+ * $Id: cg.c,v 2.3 2006/10/10 19:53:27 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -235,6 +235,6 @@ cg (int n, const double *b, double *x,
 
   if (it_param->debug == 1)
     {
-      fprintf (it_param->out, "libiter-cg %d %e\n", i, rr2);
+      fprintf (it_param->out, "libiter-cg it= %d res^2= %e\n", i, rr2);
     }
 }
