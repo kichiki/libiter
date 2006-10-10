@@ -1,0 +1,34 @@
+CC           = cc
+LD           = libtool --mode=link $(CC)
+
+#CFLAGS	     = -Wall -O3 -mtune=pentium
+CFLAGS	     = -Wall -pipe -O3 -march=prescott -fomit-frame-pointer\
+		-mfpmath=sse\
+		-ffast-math\
+		-I/usr/local/include\
+		-I../../libstokes/src
+
+LDFLAGS      = 
+#LIBS         =	-lm -L/usr/local/lib -liter\
+#		-lg2c -lblas -llapack\
+#		-lcblas -lf77blas -latlas
+LIBS         =	-lm ../src/libiter.la\
+		-L/usr/local/lib\
+		-lg2c -lblas -llapack\
+		-lcblas -lf77blas -latlas
+
+all:		test-libiter
+
+dgetri_c.o:	../../libstokes/src/dgetri_c.c
+bench.o:	../../libstokes/src/bench.c
+
+OBJ =	test-libiter.o\
+	dgetri_c.o\
+	bench.o
+
+
+test-libiter:	$(OBJ) ../src/libiter.la
+	$(LD) $(LDFLAGS) -o test-libiter $(OBJ) $(LIBS)
+
+clean:	
+	rm -f *~ *.o test-libiter
