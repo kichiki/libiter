@@ -1,5 +1,5 @@
 # Build a libtool library, libiter.la for installation in libdir.
-# $Id: Makefile.am,v 1.5 2006/10/09 20:09:24 ichiki Exp $
+# $Id: Makefile.am,v 1.6 2006/10/12 17:37:19 ichiki Exp $
 lib_LTLIBRARIES = libiter.la
 
 libiter_la_SOURCES =	\
@@ -18,6 +18,6 @@ libiter_la_SOURCES =	\
 	atpres.c	\
 	cgne.c
 
-libiter_la_LDFLAGS = -version-info 1:0:0
+libiter_la_LDFLAGS = -version-info 2:0:0
 
 include_HEADERS = libiter.h
