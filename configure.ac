@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-# $Id: configure.ac,v 1.2 2006/10/09 21:55:49 ichiki Exp $
+# $Id: configure.ac,v 1.3 2006/10/12 17:38:10 ichiki Exp $
 
 AC_PREREQ(2.59)
-AC_INIT(libiter, 0.2, kichiki@users.sourceforge.net)
+AC_INIT(libiter, 0.3, kichiki@users.sourceforge.net)
 AC_CONFIG_SRCDIR([src/libiter.c])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
