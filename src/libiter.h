@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- gmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.h,v 2.8 2006/10/10 18:14:01 ichiki Exp $
+ * $Id: libiter.h,v 2.9 2006/10/12 17:21:40 ichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,6 +18,8 @@
  */
 #ifndef	_LIBITER_H_
 #define	_LIBITER_H_
+
+#include <stdio.h> // FILE
 
 struct iter {
   char * solver;
