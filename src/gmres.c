@@ -1,6 +1,6 @@
 /* generalized minimum residual method
- * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.c,v 2.10 2006/10/10 19:53:27 ichiki Exp $
+ * Copyright (C) 1998-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: gmres.c,v 2.11 2007/10/27 03:23:01 kichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "libiter.h"
+#include "memory-check.h" // CHECK_MALLOC
 
 
 #ifdef HAVE_CBLAS_H
@@ -97,11 +98,6 @@ gmres_m (int n, const double *f, double *x,
 	 void * user_data,
 	 struct iter * it_param)
 {
-  int m;
-  double tol;
-  int itmax;
-
-  int iter;
   double res = 0.0;
 
   /* solve linear system A.x = f */
@@ -112,7 +108,6 @@ gmres_m (int n, const double *f, double *x,
   double rr, hh;
   double r1, r2;
   double g0;
-  double * v, * h, * g, * c, * s;
 
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
@@ -127,18 +122,23 @@ gmres_m (int n, const double *f, double *x,
 #endif // !HAVE_CBLAS_H
 
 
-  m = it_param->restart;
-  itmax = it_param->max;
-  tol = it_param->eps;
+  int m = it_param->restart;
+  int itmax = it_param->max;
+  double tol = it_param->eps;
 
-  v   = (double *) malloc (sizeof (double) * (m + 1) * n);
-  h   = (double *) malloc (sizeof (double) * m * m);
-  g   = (double *) malloc (sizeof (double) * m + 1);
-  c   = (double *) malloc (sizeof (double) * m);
-  s   = (double *) malloc (sizeof (double) * m);
+  double *v = (double *)malloc (sizeof (double) * (m + 1) * n);
+  double *h = (double *)malloc (sizeof (double) * m * m);
+  double *g = (double *)malloc (sizeof (double) * m + 1);
+  double *c = (double *)malloc (sizeof (double) * m);
+  double *s = (double *)malloc (sizeof (double) * m);
+  CHECK_MALLOC (v, "gmres_m");
+  CHECK_MALLOC (h, "gmres_m");
+  CHECK_MALLOC (g, "gmres_m");
+  CHECK_MALLOC (c, "gmres_m");
+  CHECK_MALLOC (s, "gmres_m");
 
 
-  iter = 0;
+  int iter = 0;
   /* 1. start: */
   /* compute r0 */
   /* compute v1 */
@@ -357,18 +357,15 @@ gmres (int n, const double *f, double *x,
        void * user_data,
        struct iter * it_param)
 {
-  double tol;
-
   double res = 0.0;
 
   /* solve linear system A.x = f */
   /* n: dimension of this sysmtem */
-  int i, j, k, m;
+  int i, j, k;
   double hv;
   double rr, hh;
   double r1, r2;
   double g0;
-  double * v, * h, * g, * c, * s;
 
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
@@ -383,14 +380,19 @@ gmres (int n, const double *f, double *x,
 #endif // !HAVE_CBLAS_H
 
 
-  m = it_param->max;
-  tol = it_param->eps;
+  int m = it_param->max;
+  double tol = it_param->eps;
 
-  v   = (double *) malloc (sizeof (double) * (m + 1) * n);
-  h   = (double *) malloc (sizeof (double) * m * m);
-  g   = (double *) malloc (sizeof (double) * m + 1);
-  c   = (double *) malloc (sizeof (double) * m);
-  s   = (double *) malloc (sizeof (double) * m);
+  double *v = (double *) malloc (sizeof (double) * (m + 1) * n);
+  double *h = (double *) malloc (sizeof (double) * m * m);
+  double *g = (double *) malloc (sizeof (double) * m + 1);
+  double *c = (double *) malloc (sizeof (double) * m);
+  double *s = (double *) malloc (sizeof (double) * m);
+  CHECK_MALLOC (v, "gmres");
+  CHECK_MALLOC (h, "gmres");
+  CHECK_MALLOC (g, "gmres");
+  CHECK_MALLOC (c, "gmres");
+  CHECK_MALLOC (s, "gmres");
 
 
   /* 1. start: */

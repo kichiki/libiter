@@ -1,6 +1,6 @@
 /* orthomin scheme
- * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: orthomin.c,v 2.5 2006/09/28 04:23:36 kichiki Exp $
+ * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: orthomin.c,v 2.6 2007/10/27 03:22:30 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -28,6 +28,7 @@
 #include <stdio.h> /* fprintf() */
 #include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
+#include "memory-check.h" // CHECK_MALLOC
 
 #include "orthomin.h"
 
@@ -55,13 +56,6 @@ otmk (int m, const double *b, double *x,
       void (*myatimes) (int, const double *, double *, void *),
       void * user_data)
 {
-  double *r; /* r[m] */
-  double *p; /* p[(kres+1) * m] */
-  double *ap; /* ap[(kres+1) * m] */
-  double *beta; /* beta[kres+1] */
-  double *pap; /* pap[kres+1] */
-
-
   int i, j;
   int k1, k2, k3;
 
@@ -73,38 +67,38 @@ otmk (int m, const double *b, double *x,
   /* for min0() */
   int jj;
 
-  /* myatimes */
-  double *tmp; /* tmp[m] */
-
-
-  /* allocation of matrices */
-  r    = (double *) malloc (sizeof (double) * m);
-  p    = (double *) malloc (sizeof (double) * m * (kres + 1));
-  ap   = (double *) malloc (sizeof (double) * m * (kres + 1));
-  beta = (double *) malloc (sizeof (double) * (kres + 1));
-  pap  = (double *) malloc (sizeof (double) * (kres + 1));
-  tmp  = (double *) malloc (sizeof (double) * m);
-  if (r == NULL
-      || p == NULL
-      || ap == NULL
-      || beta == NULL
-      || pap == NULL
-      || tmp == NULL)
-    {
-      fprintf (stderr, "malloc in otmk ()");
-      exit (1);
-    }
+  /**
+   * allocation of matrices
+   * r   [m]
+   * p   [(kres+1) * m]
+   * ap  [(kres+1) * m]
+   * beta[kres+1]
+   * pap [kres+1]
+   * tmp [m] for myatimes
+   */
+  double *r    = (double *)malloc (sizeof (double) * m);
+  double *p    = (double *)malloc (sizeof (double) * m * (kres + 1));
+  double *ap   = (double *)malloc (sizeof (double) * m * (kres + 1));
+  double *beta = (double *)malloc (sizeof (double) * (kres + 1));
+  double *pap  = (double *)malloc (sizeof (double) * (kres + 1));
+  double *tmp  = (double *)malloc (sizeof (double) * m);
+  CHECK_MALLOC (r   , "otmk");
+  CHECK_MALLOC (p   , "otmk");
+  CHECK_MALLOC (ap  , "otmk");
+  CHECK_MALLOC (beta, "otmk");
+  CHECK_MALLOC (pap , "otmk");
+  CHECK_MALLOC (tmp , "otmk");
 
 
   myatimes (m, x, tmp, user_data);
-  for (i=0; i<m; i++) /* 110 */
+  for (i = 0; i < m; i++) /* 110 */
     {
       tbs = b[i] - tmp[i];
       r[i] = tbs;
       p[0 * m + i] = tbs;
     }/* 110 */
   myatimes (m, r, tmp, user_data);
-  for (i=0; i<m; i++) /* 120 */
+  for (i = 0; i < m; i++) /* 120 */
     {
       ap[0 * m + i] = tmp[i];
     }/* 120 */
@@ -115,7 +109,7 @@ otmk (int m, const double *b, double *x,
       res = 0.0;
       rap = 0.0;
       pap[k1] = 0.0;
-      for (i=0; i<m; i++) /* 210 */
+      for (i = 0; i < m; i++) /* 210 */
 	{
           res += r[i] * r[i];
 	  rap += r[i] * ap[k1 * m + i];
@@ -128,14 +122,14 @@ otmk (int m, const double *b, double *x,
 
       if((*hg) <= eps) goto end_otmk;
       alpha = rap / pap[k1];
-      for (i=0; i<m; i++) /* 220 */
+      for (i = 0; i < m; i++) /* 220 */
 	{
 	  r[i] -= alpha * ap[k1 * m + i];
 	  x[i] += alpha * p[k1 * m + i];
 	}/* 220 */
       k2 = ((*iter) + 1) % (kres + 1);
       myatimes (m, r, tmp, user_data);
-      for (i=0; i<m; i++) /* 230 */
+      for (i = 0; i < m; i++) /* 230 */
 	{
 	  p[k2 * m + i] = r[i];
 	  ap[k2 * m + i] = tmp[i];
@@ -148,12 +142,12 @@ otmk (int m, const double *b, double *x,
 	{
 	  k3 = ((*iter) - j) % (kres + 1);
 	  beta[k3] = 0.0;
-	  for (i=0; i<m; i++) /* 310 */
+	  for (i = 0; i < m; i++) /* 310 */
 	    {
 	      beta[k3] += ap[k2 * m + i] * ap[k3 * m + i];
 	    }/* 310 */
 	  beta[k3] = - beta[k3] / pap[k3];
-	  for (i=0; i<m; i++) /* 320 */
+	  for (i = 0; i < m; i++) /* 320 */
 	    {
 	      p[k2 * m + i] += beta[k3] * p[k3 * m + i];
 	      ap[k2 * m + i] += beta[k3] * ap[k3 * m + i];
