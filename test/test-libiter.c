@@ -1,6 +1,6 @@
 /* test code for libiter solvers
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: test-libiter.c,v 1.1 2006/10/10 19:50:51 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: test-libiter.c,v 1.2 2007/10/27 03:37:33 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -79,7 +79,7 @@ make_matrix_Toeplitz (int n, double gamma, double * mat)
  *  *user_data = (double) gamma
  */
 void
-atimes_Toeplitz (int n, const double * x, double * b, void * user_data)
+atimes_Toeplitz (int n, const double *x, double *b, void *user_data)
 {
   int i;
   double *gamma;
@@ -100,7 +100,7 @@ atimes_Toeplitz (int n, const double * x, double * b, void * user_data)
     }
 }
 void
-atimes_t_Toeplitz (int n, const double * x, double * b, void * user_data)
+atimes_t_Toeplitz (int n, const double *x, double *b, void *user_data)
 {
   int i;
   double *gamma;
@@ -127,31 +127,27 @@ atimes_t_Toeplitz (int n, const double * x, double * b, void * user_data)
  *  *user_data = (double *) mat
  */
 void
-atimes_by_matrix (int n, const double * x, double * b, void * user_data)
+atimes_by_matrix (int n, const double *x, double *b, void *user_data)
 {
-  double * mat;
-
   char trans = 'T'; /* fortran's memory allocation is transposed */
   int i_1 = 1;
   double d_1 = 1.0;
   double d_0 = 0.0;
 
-  mat = (double *)user_data;
+  double *mat = (double *)user_data;
   dgemv_ (&trans, &n, &n, &d_1, mat, &n,
 	  x, &i_1,
 	  &d_0, b, &i_1);
 }
 void
-atimes_t_by_matrix (int n, const double * x, double * b, void * user_data)
+atimes_t_by_matrix (int n, const double *x, double *b, void *user_data)
 {
-  double * mat;
-
   char trans = 'N'; /* fortran's memory allocation is transposed */
   int i_1 = 1;
   double d_1 = 1.0;
   double d_0 = 0.0;
 
-  mat = (double *)user_data;
+  double * mat = (double *)user_data;
   dgemv_ (&trans, &n, &n, &d_1, mat, &n,
 	  x, &i_1,
 	  &d_0, b, &i_1);
@@ -166,40 +162,34 @@ atimes_t_by_matrix (int n, const double * x, double * b, void * user_data)
  */
 void
 test_all (int n,
-	  const double * b, const double * x0,
+	  const double *b, const double *x0,
 	  void (* atimes)(int, const double *, double *, void *),
 	  void (* atimes_trans)(int, const double *, double *, void *),
-	  void * user_data,
+	  void *user_data,
 	  int itmax, double eps,
-	  double * x)
+	  double *x)
 {
-  struct iter * iter; // for libiter
-
   int i;
-
-  double * x1 = NULL;
-
-  int it;
-  double res;
 
   double t0, t;
   double tiny = 1.0e-6;
 
 
-  x1 = (double *) malloc (sizeof (double) * n);
+  double *x1 = (double *) malloc (sizeof (double) * n);
 
+
+  struct iter *iter; // for libiter
 
   // reset initial guess
-  for (i = 0; i < n; i ++)
-    {
-      x1[i] = x0[i];
-    }
-  iter = iter_init ("steepest", itmax, 20, eps, 1, stdout);
+  iter = iter_init ("steepest", itmax, 20, eps,
+		    n, x0, 0, // guess
+		    1, stdout);
   t0 = ptime_ms_d();
-  steepest (n, b, x1,
-	    atimes, user_data,
-	    iter);
+  solve_iter (n, b, x1,
+	      atimes, user_data,
+	      iter);
   t = ptime_ms_d();
+  iter_free (iter);
   fprintf (stdout, "SteepestDescent: cpu time %f\n", t-t0);
   if (x != NULL)
     {
@@ -217,16 +207,15 @@ test_all (int n,
   fprintf (stdout, "\n");
 
   // reset initial guess
-  for (i = 0; i < n; i ++)
-    {
-      x1[i] = x0[i];
-    }
-  iter = iter_init ("cg", itmax, 20, eps, 1, stdout);
+  iter = iter_init ("cg", itmax, 20, eps,
+		    n, x0, 0, // guess
+		    1, stdout);
   t0 = ptime_ms_d();
-  cg (n, b, x1,
-      atimes, user_data,
-      iter);
+  solve_iter (n, b, x1,
+	      atimes, user_data,
+	      iter);
   t = ptime_ms_d();
+  iter_free (iter);
   fprintf (stdout, "CG: cpu time %f\n", t-t0);
   if (x != NULL)
     {
@@ -243,6 +232,9 @@ test_all (int n,
     }
   fprintf (stdout, "\n");
 
+
+  int it;
+  double res;
   // reset initial guess
   for (i = 0; i < n; i ++)
     {
@@ -378,16 +370,15 @@ test_all (int n,
   fprintf (stdout, "\n");
 
   // reset initial guess
-  for (i = 0; i < n; i ++)
-    {
-      x1[i] = x0[i];
-    }
-  iter = iter_init ("cgs", itmax, 20, eps, 1, stdout);
+  iter = iter_init ("cgs", itmax, 20, eps,
+		    n, x0, 0, // guess
+		    1, stdout);
   t0 = ptime_ms_d();
-  cgs (n, b, x1,
-       atimes, user_data,
-       iter);
+  solve_iter (n, b, x1,
+	      atimes, user_data,
+	      iter);
   t = ptime_ms_d();
+  iter_free (iter);
   fprintf (stdout, "CGS: cpu time %f\n", t-t0);
   if (x != NULL)
     {
@@ -405,16 +396,15 @@ test_all (int n,
   fprintf (stdout, "\n");
 
   // reset initial guess
-  for (i = 0; i < n; i ++)
-    {
-      x1[i] = x0[i];
-    }
-  iter = iter_init ("bicgstab", itmax, 20, eps, 1, stdout);
+  iter = iter_init ("bicgstab", itmax, 20, eps,
+		    n, x0, 0, // guess
+		    1, stdout);
   t0 = ptime_ms_d();
-  bicgstab (n, b, x1,
-	    atimes, user_data,
-	    iter);
+  solve_iter (n, b, x1,
+	      atimes, user_data,
+	      iter);
   t = ptime_ms_d();
+  iter_free (iter);
   fprintf (stdout, "BiCGSTAB: cpu time %f\n", t-t0);
   if (x != NULL)
     {
@@ -432,18 +422,16 @@ test_all (int n,
   fprintf (stdout, "\n");
 
   // reset initial guess
-  for (i = 0; i < n; i ++)
-    {
-      x1[i] = x0[i];
-    }
-  iter = iter_init ("sta",   itmax, 20, eps, 1, stdout);
+  iter = iter_init ("sta",   itmax, 20, eps,
+		    n, x0, 0, // guess
+		    1, stdout);
   t0 = ptime_ms_d();
   solve_iter (n, b, x1,
 	      atimes, user_data,
 	      iter);
   t = ptime_ms_d();
-  fprintf (stdout, "sta: cpu time %f\n", t-t0);
   iter_free (iter);
+  fprintf (stdout, "sta: cpu time %f\n", t-t0);
   if (x != NULL)
     {
       for (i = 0; i < n; i ++)
@@ -460,18 +448,16 @@ test_all (int n,
   fprintf (stdout, "\n");
 
   // reset initial guess
-  for (i = 0; i < n; i ++)
-    {
-      x1[i] = x0[i];
-    }
-  iter = iter_init ("gmres", itmax, 20, eps, 1, stdout);
-   t0 = ptime_ms_d();
+  iter = iter_init ("gmres", itmax, 20, eps,
+		    n, x0, 0, // guess
+		    1, stdout);
+  t0 = ptime_ms_d();
   solve_iter (n, b, x1,
 	      atimes, user_data,
 	      iter);
   t = ptime_ms_d();
-  fprintf (stdout, "GMRES: cpu time %f\n", t-t0);
   iter_free (iter);
+  fprintf (stdout, "GMRES: cpu time %f\n", t-t0);
   if (x != NULL)
     {
       for (i = 0; i < n; i ++)
@@ -496,9 +482,6 @@ test_all (int n,
 int
 main (int argc, char** argv)
 {
-  double * b;  // given vector
-  double * x;  // solution
-  double * mat_Toeplitz = NULL;
   int n;
   int nn;
   double gamma;
@@ -511,10 +494,6 @@ main (int argc, char** argv)
 
   int i_1 = 1;
 
-  double * mat = NULL;
-  double * inv = NULL;
-
-
 
   //itmax = 2000;
   itmax = 10000;
@@ -526,11 +505,11 @@ main (int argc, char** argv)
   n = 10;
   nn = n * n;
 
-  b  = (double *) malloc (sizeof (double) * n);
-  x  = (double *) malloc (sizeof (double) * n);
+  double *b = (double *)malloc (sizeof (double) * n); // given vector
+  double *x = (double *)malloc (sizeof (double) * n); // solution
 
-  mat = (double *) malloc (sizeof (double) * nn);
-  inv = (double *) malloc (sizeof (double) * nn);
+  double *mat = (double *)malloc (sizeof (double) * nn);
+  double *inv = (double *)malloc (sizeof (double) * nn);
 
   for (i = 0; i < n; i ++)
     {
@@ -579,7 +558,8 @@ main (int argc, char** argv)
 
   b  = (double *) malloc (sizeof (double) * n);
   x  = (double *) malloc (sizeof (double) * n);
-  mat_Toeplitz = (double *) malloc (sizeof (double) * n * n);
+  double *mat_Toeplitz
+    = (double *) malloc (sizeof (double) * n * n);
 
   /* given vector */
   for (i = 0; i < n; i ++)
