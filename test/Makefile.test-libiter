@@ -1,3 +1,5 @@
+# $Id: Makefile.test-libiter,v 1.2 2007/10/27 03:38:23 kichiki Exp $
+
 CC           = cc
 LD           = libtool --mode=link $(CC)
 
@@ -8,14 +10,19 @@ CFLAGS	     = -Wall -pipe -O3 -march=prescott -fomit-frame-pointer\
 		-I/usr/local/include\
 		-I../../libstokes/src
 
+#ATLAS_LIBS	= \
+#	-lg2c -lblas -llapack\
+#	-lcblas -lf77blas -latlas
+ATLAS_LIBS	= \
+	-L/usr/local/lib/gcc-4.2.3 -lgfortran \
+	-L/usr/local/lib -lalapack -lf77blas -lcblas -latlas\
+	-larpack
+
 LDFLAGS      = 
-#LIBS         =	-lm -L/usr/local/lib -liter\
-#		-lg2c -lblas -llapack\
-#		-lcblas -lf77blas -latlas
-LIBS         =	-lm ../src/libiter.la\
+LIBS         =	../src/libiter.la\
+	     	-lm\
 		-L/usr/local/lib\
-		-lg2c -lblas -llapack\
-		-lcblas -lf77blas -latlas
+		$(ATLAS_LIBS)
 
 all:		test-libiter
 
