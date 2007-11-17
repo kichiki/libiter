@@ -1,6 +1,6 @@
 /* overall wrapper for iterative solver routines
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.c,v 1.4 2007/10/27 03:31:09 kichiki Exp $
+ * $Id: libiter.c,v 1.5 2007/11/17 23:43:55 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -173,6 +173,7 @@ solve_iter (int n, const double *b,
     }
 
   double residual;
+  double log10res;
   int iter;
 
   if (strcmp (it_param->solver, "steepest") == 0)
@@ -205,11 +206,12 @@ solve_iter (int n, const double *b,
       sta (n, b, x,
 	   it_param->max,
 	   it_param->log10_eps,
-	   hnor, &iter, &residual,
+	   hnor, &iter, &log10res,
 	   atimes, user_data);
 
       if (it_param->debug != 0)
 	{
+	  residual = pow (10.0, log10res);
 	  fprintf (it_param->out, "libiter-sta: iter=%d res=%e\n",
 		   iter, residual);
 	}
@@ -219,11 +221,12 @@ solve_iter (int n, const double *b,
       sta2 (n, b, x,
 	    it_param->max,
 	    it_param->log10_eps,
-	    hnor, &iter, &residual,
+	    hnor, &iter, &log10res,
 	    atimes, user_data);
 
       if (it_param->debug != 0)
 	{
+	  residual = pow (10.0, log10res);
 	  fprintf (it_param->out, "libiter-sta2: iter=%d res=%e\n",
 		   iter, residual);
 	}
@@ -233,11 +236,12 @@ solve_iter (int n, const double *b,
       gpb (n, b, x,
 	   it_param->max,
 	   it_param->log10_eps,
-	   hnor, &iter, &residual,
+	   hnor, &iter, &log10res,
 	   atimes, user_data);
 
       if (it_param->debug != 0)
 	{
+	  residual = pow (10.0, log10res);
 	  fprintf (it_param->out, "libiter-gpb: iter=%d res=%e\n",
 		   iter, residual);
 	}
@@ -248,11 +252,12 @@ solve_iter (int n, const double *b,
 	    it_param->restart,
 	    it_param->max,
 	    it_param->log10_eps,
-	    hnor, &iter, &residual,
+	    hnor, &iter, &log10res,
 	    atimes, user_data);
 
       if (it_param->debug != 0)
 	{
+	  residual = pow (10.0, log10res);
 	  fprintf (it_param->out, "libiter-otmk: iter=%d res=%e\n",
 		   iter, residual);
 	}
