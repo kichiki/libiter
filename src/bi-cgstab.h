@@ -1,7 +1,7 @@
 /* header file of bi-cgstab.c --
  * wrapper for iterative solver routines
- * Copyright (C) 1999-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bi-cgstab.h,v 2.5 2006/09/28 04:22:42 kichiki Exp $
+ * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: bi-cgstab.h,v 2.6 2007/11/22 05:52:14 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -27,34 +27,216 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+#ifndef	_BI_CGSTAB_H_
+#define	_BI_CGSTAB_H_
 
+
+/* bi-cgstab method
+ *   m : dimension of the problem
+ *   kend : max of iteration
+ *   b [m] : r-h-s vector
+ *   eps : log10 of cutoff
+ *   hnor : log10 of norm of b []
+ *   atimes (int m, double *x, double *b) : calc matrix-vector product
+ *   atimes_param : pointer to be passed to atimes routines
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
 void
 sta (int m, const double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
-     void (*myatimes) (int, const double *, double *, void *),
-     void * user_data);
+     void (*atimes) (int, const double *, double *, void *),
+     void * atimes_param);
+
+/* bi-cgstab2 method
+ *   m : dimension of the problem
+ *   kend : max of iteration
+ *   b [m] : r-h-s vector
+ *   eps : log10 of cutoff
+ *   hnor : log10 of norm of b []
+ *   atimes (int m, double *x, double *b) : calc matrix-vector product
+ *   atimes_param : pointer to be passed to atimes routines
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
 void
 sta2 (int m, const double *b, double *x, int kend,
       double eps, double hnor,
       int *iter, double *hg,
-      void (*myatimes) (int, const double *, double *, void *),
-      void * user_data);
-void
-st2_chk (int m, const double *b, double *x, int kend,
-	 double eps, double hnor,
-	 int *iter, double *hg,
-	 void (*myatimes) (int, const double *, double *, void *),
-	 void * user_data);
+      void (*atimes) (int, const double *, double *, void *),
+      void * atimes_param);
+
+/* gpbi-cg method
+ *   m : dimension of the problem
+ *   kend : max of iteration
+ *   b [m] : r-h-s vector
+ *   eps : log10 of cutoff
+ *   hnor : log10 of norm of b []
+ *   atimes (int m, double *x, double *b) : calc matrix-vector product
+ *   atimes_param : pointer to be passed to atimes routines
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
 void
 gpb (int m, const double *b, double *x, int kend,
      double eps, double hnor,
      int *iter, double *hg,
-     void (*myatimes) (int, const double *, double *, void *),
-     void * user_data);
+     void (*atimes) (int, const double *, double *, void *),
+     void * atimes_param);
+
+
+/** new implementation **/
+
+/* bi-cgstab method
+ * INPUT
+ *   m : dimension of the problem
+ *   b [m] : r-h-s vector
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps : log10 of cutoff
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
 void
-gpb_chk (int m, const double *b, double *x, int kend,
-	 double eps, double hnor,
+sta_ (int m, const double *b, double *x,
+      int *iter, double *hg,
+      void (*atimes) (int, const double *, double *, void *),
+      void * atimes_param,
+      struct iter *it);
+
+/* bi-cgstab method with precondition
+ * INPUT
+ *   m : dimension of the problem
+ *   b [m] : r-h-s vector
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int m, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps : log10 of cutoff
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
+void
+sta_pc (int m, const double *b, double *x,
+	int *iter, double *hg,
+	void (*atimes) (int, const double *, double *, void *),
+	void * atimes_param,
+	void (*inv) (int, const double *, double *, void *),
+	void *inv_param,
+	struct iter *it);
+
+/* bi-cgstab2 method
+ * INPUT
+ *   m : dimension of the problem
+ *   b [m] : r-h-s vector
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps : log10 of cutoff
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
+void
+sta2_ (int m, const double *b, double *x,
+       int *iter, double *hg,
+       void (*atimes) (int, const double *, double *, void *),
+       void * atimes_param,
+       struct iter *it);
+
+/* bi-cgstab2 method with precondition
+ * INPUT
+ *   m : dimension of the problem
+ *   b [m] : r-h-s vector
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int m, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps : log10 of cutoff
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
+void
+sta2_pc (int m, const double *b, double *x,
 	 int *iter, double *hg,
-	 void (*myatimes) (int, const double *, double *, void *),
-	 void * user_data);
+	 void (*atimes) (int, const double *, double *, void *),
+	 void * atimes_param,
+	 void (*inv) (int, const double *, double *, void *),
+	 void *inv_param,
+	 struct iter *it);
+
+/* gpbi-cg method
+ *   m : dimension of the problem
+ *   b [m] : r-h-s vector
+ *   atimes (int m, double *x, double *b) : calc matrix-vector product
+ *   atimes_param : pointer to be passed to atimes routines
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps : log10 of cutoff
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
+void
+gpb_ (int m, const double *b, double *x,
+      int *iter, double *hg,
+      void (*atimes) (int, const double *, double *, void *),
+      void * atimes_param,
+      struct iter *it);
+
+/* gpbi-cg method with precondition
+ *   m : dimension of the problem
+ *   b [m] : r-h-s vector
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int m, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps : log10 of cutoff
+ * OUTPUT
+ *   x [m] : solution
+ *   *iter : # of iteration
+ *   *hg : log10(residual)
+ */
+void
+gpb_pc (int m, const double *b, double *x,
+	int *iter, double *hg,
+	void (*atimes) (int, const double *, double *, void *),
+	void * atimes_param,
+	void (*inv) (int, const double *, double *, void *),
+	void *inv_param,
+	struct iter *it);
+
+
+#endif /* !_BI_CGSTAB_H_ */
