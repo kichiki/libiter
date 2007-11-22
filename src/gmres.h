@@ -1,7 +1,7 @@
 /* header file of mygmres.c --
  * generalized minimum residual method
- * Copyright (C) 1998-2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.h,v 2.7 2006/10/10 18:11:20 ichiki Exp $
+ * Copyright (C) 1998-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: gmres.h,v 2.8 2007/11/22 05:51:12 kichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -26,14 +26,29 @@
 
 void
 gmres_m (int n, const double *f, double *x,
-	 void (*myatimes) (int, const double *, double *, void *),
-	 void * user_data,
-	 struct iter * it_param);
+	 void (*atimes) (int, const double *, double *, void *),
+	 void *atimes_param,
+	 struct iter *it_param);
+
+void
+gmres_m_ (int n, const double *f, double *x,
+	  void (*atimes) (int, const double *, double *, void *),
+	  void *atimes_param,
+	  struct iter *it_param);
+
+void
+gmres_m_pc (int n, const double *f, double *x,
+	    void (*atimes) (int, const double *, double *, void *),
+	    void *atimes_param,
+	    void (*inv) (int, const double *, double *, void *),
+	    void *inv_param,
+	    struct iter *it_param);
+
 void
 gmres (int n, const double *f, double *x,
-       void (*myatimes) (int, const double *, double *, void *),
-       void * user_data,
-       struct iter * it_param);
+       void (*atimes) (int, const double *, double *, void *),
+       void *atimes_param,
+       struct iter *it_param);
 
 
 #endif /* !_GMRES_H_ */
