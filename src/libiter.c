@@ -1,6 +1,6 @@
 /* overall wrapper for iterative solver routines
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.c,v 1.5 2007/11/17 23:43:55 kichiki Exp $
+ * $Id: libiter.c,v 1.6 2007/11/23 04:56:55 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,7 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include <stdio.h> /* fprintf() */
-#include <math.h> /* log10() */
 #include <stdlib.h> /* malloc(), free() */
 #include <string.h> /* strcmp() */
 
@@ -39,8 +38,7 @@
  * INPUT
  *   solver : string indicating the solver
  *            sta, sta2, gpb, otmk, or gmres (default)
- *   eps and log10_eps
- *   max (and restart)
+ *   max, restart, eps : iteration parameters
  *   n          : dimension of the problem
  *   guess[n]   : initial guess
  *                if NULL is given, set zero for the guess
@@ -55,12 +53,9 @@
  */
 struct iter *
 iter_init (const char *solver,
-	   int max,
-	   int restart,
-	   double eps,
-	   int n, double *guess, int flag_guess,
-	   int debug,
-	   FILE *out)
+	   int max, int restart, double eps,
+	   int n, const double *guess, int flag_guess,
+	   int debug, FILE *out)
 {
   struct iter *param = (struct iter *)malloc (sizeof (struct iter));
   CHECK_MALLOC (param, "iter_init");
@@ -72,8 +67,8 @@ iter_init (const char *solver,
   param->max = max;
   param->restart = restart;
   param->eps = eps;
-  param->log10_eps = log10 (eps);
 
+  /* to keep good initial guess for the next step */
   param->n = n;
   param->guess = (double *)malloc (sizeof (double) * n);
   CHECK_MALLOC (param->solver, "iter_init");
@@ -91,8 +86,13 @@ iter_init (const char *solver,
     }
   param->flag_guess = flag_guess;
 
-  param->debug = debug;
+  /* results of the iteration */
+  param->niter = 0;
+  param->res2  = 0.0;
+
+  /* to report the debug informations */
   param->out   = out;
+  param->debug = debug;
 
   return (param);
 }
@@ -121,8 +121,7 @@ iter_free (struct iter *param)
  *                "bicgstab" : bi-conjugate gradient stabilized
  *                "sta", "sta2", "gpb", "otmk" :
  *                "gmres"    : generalized minimum residual method  (default)
- *              eps and log10_eps
- *              max (and restart)
+ *              max, restart, eps
  *              n, guess[n] : the result at the last process
  *              flag_guess : 0 == don't keep the results,
  *                           1 == keep the results for the next.
@@ -133,7 +132,7 @@ void
 solve_iter (int n, const double *b,
 	    double *x,
 	    void (*atimes) (int, const double *, double *, void *),
-	    void *user_data,
+	    void *atimes_param,
 	    struct iter *it_param)
 {
   int i;
@@ -161,111 +160,59 @@ solve_iter (int n, const double *b,
     }
 
 
-  /* some preparation */
-  double hnor = 0.0;
-  for (i = 0; i < n; ++i)
-    {
-      hnor += b [i] * b [i];
-    }
-  if (hnor != 0.0)
-    {
-      hnor = log10 (hnor) / 2.0;
-    }
-
-  double residual;
-  double log10res;
-  int iter;
-
   if (strcmp (it_param->solver, "steepest") == 0)
     {
       steepest
 	(n, b, x,
-	 atimes, user_data,
+	 atimes, atimes_param,
 	 it_param);
     }
   else if (strcmp (it_param->solver, "cg") == 0)
     {
       cg (n, b, x,
-	  atimes, user_data,
+	  atimes, atimes_param,
 	  it_param);
     }
   else if (strcmp (it_param->solver, "cgs") == 0)
     {
       cgs (n, b, x,
-	   atimes, user_data,
+	   atimes, atimes_param,
 	   it_param);
     }
   else if (strcmp (it_param->solver, "bicgstab") == 0)
     {
       bicgstab (n, b, x,
-		atimes, user_data,
+		atimes, atimes_param,
 		it_param);
     }
   else if (strcmp (it_param->solver, "sta") == 0)
     {
       sta (n, b, x,
-	   it_param->max,
-	   it_param->log10_eps,
-	   hnor, &iter, &log10res,
-	   atimes, user_data);
-
-      if (it_param->debug != 0)
-	{
-	  residual = pow (10.0, log10res);
-	  fprintf (it_param->out, "libiter-sta: iter=%d res=%e\n",
-		   iter, residual);
-	}
+	   atimes, atimes_param,
+	   it_param);
     }
   else if (strcmp (it_param->solver, "sta2") == 0)
     {
       sta2 (n, b, x,
-	    it_param->max,
-	    it_param->log10_eps,
-	    hnor, &iter, &log10res,
-	    atimes, user_data);
-
-      if (it_param->debug != 0)
-	{
-	  residual = pow (10.0, log10res);
-	  fprintf (it_param->out, "libiter-sta2: iter=%d res=%e\n",
-		   iter, residual);
-	}
+	    atimes, atimes_param,
+	    it_param);
     }
   else if (strcmp (it_param->solver, "gpb") == 0)
     {
       gpb (n, b, x,
-	   it_param->max,
-	   it_param->log10_eps,
-	   hnor, &iter, &log10res,
-	   atimes, user_data);
-
-      if (it_param->debug != 0)
-	{
-	  residual = pow (10.0, log10res);
-	  fprintf (it_param->out, "libiter-gpb: iter=%d res=%e\n",
-		   iter, residual);
-	}
+	   atimes, atimes_param,
+	   it_param);
     }
   else if (strcmp (it_param->solver, "otmk") == 0)
     {
       otmk (n, b, x,
-	    it_param->restart,
-	    it_param->max,
-	    it_param->log10_eps,
-	    hnor, &iter, &log10res,
-	    atimes, user_data);
-
-      if (it_param->debug != 0)
-	{
-	  residual = pow (10.0, log10res);
-	  fprintf (it_param->out, "libiter-otmk: iter=%d res=%e\n",
-		   iter, residual);
-	}
+	    atimes, atimes_param,
+	    it_param);
     }
   else //if (strcmp (it_param->solver, "gmres") == 0)
     {
       gmres_m (n, b, x,
-	       atimes, user_data,
+	       atimes, atimes_param,
 	       it_param);
     }
 

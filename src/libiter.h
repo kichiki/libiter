@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- gmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.h,v 2.10 2007/10/27 03:31:42 kichiki Exp $
+ * $Id: libiter.h,v 2.11 2007/11/23 04:57:22 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,31 +22,43 @@
 #include <stdio.h> // FILE
 
 struct iter {
-  char *solver;
+  char *solver; /* for solve_iter() routine.
+		 * currently following solvers are implemented:
+		 * "steepest" : steepest descent method
+		 * "cg"       : conjugate gradient
+		 * "cgs"      : conjugate gradient squared
+		 * "bicgstab" : bi-conjugate gradient stabilized
+		 * "sta", "sta2", "gpb", "otmk" :
+		 * "gmres"    : generalized minimum residual method  (default)
+		 */
   int max;
   int restart;
   double eps;
-  double log10_eps;
+  //double log10_eps;
 
+  /* to keep good initial guess for the next step */
   int n;
   double *guess;
   int flag_guess; /* 0 : don't keep the results for the guess
 		   * 1 : keep the results for the next guess
 		   */
+  /* results of the iteration */
+  int niter;   // number of iteration
+  double res2; // |r^2| / |b^2|
 
+  /* to report the debug informations */
+  FILE *out;
   int debug; /* = 0 : no debug info
 	      * = 1 : iteration numbs and residue
 	      * = 2 : residue for each iteration step
 	      */
-  FILE *out;
 };
 
 /* initialize parameters
  * INPUT
  *   solver : string indicating the solver
  *            sta, sta2, gpb, otmk, or gmres (default)
- *   eps and log10_eps
- *   max (and restart)
+ *   max, restart, eps : iteration parameters
  *   n          : dimension of the problem
  *   guess[n]   : initial guess
  *                if NULL is given, set zero for the guess
@@ -61,14 +73,9 @@ struct iter {
  */
 struct iter *
 iter_init (const char *solver,
-	   int max,
-	   int restart,
-	   double eps,
-	   int n,
-	   double *guess,
-	   int flag_guess,
-	   int debug,
-	   FILE *out);
+	   int max, int restart, double eps,
+	   int n, const double *guess, int flag_guess,
+	   int debug, FILE *out);
 
 void
 iter_free (struct iter *param);
@@ -87,8 +94,7 @@ iter_free (struct iter *param);
  *                "bicgstab" : bi-conjugate gradient stabilized
  *                "sta", "sta2", "gpb", "otmk" :
  *                "gmres"    : generalized minimum residual method  (default)
- *              eps and log10_eps
- *              max (and restart)
+ *              max, restart, eps
  *              n, guess[n] : the result at the last process
  *              flag_guess : 0 == don't keep the results,
  *                           1 == keep the results for the next.
@@ -99,7 +105,7 @@ void
 solve_iter (int n, const double *b,
 	    double *x,
 	    void (*atimes) (int, const double *, double *, void *),
-	    void *user_data,
+	    void *atimes_param,
 	    struct iter *it_param);
 
 
