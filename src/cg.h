@@ -1,8 +1,8 @@
 /* header file for cg.c --
  * Classical CG method -- Weiss' Algorithm 2
  * my implementation of Classical CG method
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cg.h,v 2.2 2006/10/10 18:07:32 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: cg.h,v 2.3 2007/11/23 05:04:22 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,12 +23,14 @@
 
 
 /* Classical CG method -- Weiss' Algorithm 2
+ * INPUT
+ *  it_param : eps, max, debug, out are used.
  */
 void
 cg (int n, const double *b, double *x,
     void (*atimes) (int, const double *, double *, void *),
-    void * user_data,
-    struct iter * it_param);
+    void *atimes_param,
+    struct iter *it_param);
 
 
 #endif /* !_CG_H_ */

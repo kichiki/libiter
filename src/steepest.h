@@ -1,6 +1,6 @@
 /* Steepest Descent -- Weiss' Algorithm 1
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: steepest.h,v 2.2 2006/10/10 18:06:33 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: steepest.h,v 2.3 2007/11/23 05:03:03 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,11 +21,13 @@
 
 
 /* Steepest Descent -- Weiss' Algorithm 1
+ * INPUT
+ *  it_param : eps, max, debug, out are used.
  */
 void
 steepest (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
-	  void * user_data,
+	  void *atimes_param,
 	  struct iter * it_param);
 
 

@@ -1,7 +1,7 @@
 /* header file for atpres.c --
  * ATPRES -- Weiss, Algorithm 5
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: atpres.h,v 2.2 2006/10/09 22:01:37 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: atpres.h,v 2.3 2007/11/23 05:01:09 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,13 +21,31 @@
 #define	_ATPRES_H_
 
 
+/*  for details to the algorithm see
+ *  R. Weiss : Parameter-Free Iterative Linear Solvers (1996)
+ *  Algorithm 5 : ATPRES
+ * INPUT
+ *   n : dimension of the problem
+ *   b[n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_t (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A^T.x = b.
+ *   atimes_param : parameters for atimes() and atimes_t().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x[n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
+ */
 void
 atpres (int n, const double *b, double *x,
-	double eps, int maxiter,
-	int *iter, double *res,
 	void (*atimes) (int, const double *, double *, void *),
 	void (*atimes_t) (int, const double *, double *, void *),
-	void * user_data);
+	void *atimes_param,
+	struct iter *it);
 
 
 #endif /* !_ATPRES_H_ */

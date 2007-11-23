@@ -1,6 +1,6 @@
 /* QMR -- Weiss' Algorithm 10
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: qmr.h,v 2.1 2006/10/09 20:09:24 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: qmr.h,v 2.2 2007/11/23 05:08:17 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,13 +19,30 @@
 #ifndef	_QMR_H_
 #define	_QMR_H_
 
+
+/* QMR -- Weiss' Algorithm 10
+ * INPUT
+ *   n : dimension of the problem
+ *   b[n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_t (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A^T.x = b.
+ *   atimes_param : parameters for atimes() and atimes_t().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x[n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
+ */
 void
 qmr (int n, const double *b, double *x,
-     double tol, int itmax,
-     int *iter, double *res,
      void (*atimes) (int, const double *, double *, void *),
-     void (*atimes_trans) (int, const double *, double *, void *),
-     void * user_data);
+     void (*atimes_t) (int, const double *, double *, void *),
+     void *atimes_param,
+     struct iter *it);
 
 
 #endif /* !_QMR_H_ */

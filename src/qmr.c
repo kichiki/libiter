@@ -1,6 +1,6 @@
 /* QMR -- Weiss' Algorithm 10
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: qmr.c,v 2.1 2006/10/09 20:09:24 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: qmr.c,v 2.2 2007/11/23 05:07:56 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "libiter.h" // struct iter
+#include "memory-check.h" // CHECK_MALLOC
 
 
 /* BLAS functions */
@@ -45,61 +47,60 @@ dscal_(int* N,
 
 
 /* QMR -- Weiss' Algorithm 10
+ * INPUT
+ *   n : dimension of the problem
+ *   b[n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_t (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A^T.x = b.
+ *   atimes_param : parameters for atimes() and atimes_t().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x[n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 qmr (int n, const double *b, double *x,
-     double tol, int itmax,
-     int *iter, double *res,
      void (*atimes) (int, const double *, double *, void *),
-     void (*atimes_trans) (int, const double *, double *, void *),
-     void * user_data)
+     void (*atimes_t) (int, const double *, double *, void *),
+     void *atimes_param,
+     struct iter *it)
 {
-  int i;
+  int itmax = it->max;
+  double eps2 = it->eps * it->eps;
 
   int i_1 = 1;
   double d_1 = 1.0;
   double d_m1 = -1.0;
 
-  double * xt;
-  double * r;
-  double * rt;
-  double * rs;
-  double * p;
-  double * ps;
-  double * atps;
-  double * ap;
+  double *xt   = (double *)malloc (sizeof (double) * n);
+  double *r    = (double *)malloc (sizeof (double) * n);
+  double *rt   = (double *)malloc (sizeof (double) * n);
+  double *rs   = (double *)malloc (sizeof (double) * n);
+  double *p    = (double *)malloc (sizeof (double) * n);
+  double *ps   = (double *)malloc (sizeof (double) * n);
+  double *atps = (double *)malloc (sizeof (double) * n);
+  double *ap   = (double *)malloc (sizeof (double) * n);
+  CHECK_MALLOC (xt,   "bico");
+  CHECK_MALLOC (r,    "bico");
+  CHECK_MALLOC (rt,   "bico");
+  CHECK_MALLOC (rs,   "bico");
+  CHECK_MALLOC (p,    "bico");
+  CHECK_MALLOC (ps,   "bico");
+  CHECK_MALLOC (atps, "bico");
+  CHECK_MALLOC (ap,   "bico");
 
-  double t2;
-  double rt2;
-  double patps;
-  double rtrs, rtrs1;
-
-  double delta;
-  double beta;
-  double gamma;
-  double d_1_gamma;
-
-  double tol2;
+  double b2 = ddot_ (&n, b, &i_1, b, &i_1);
+  eps2 *= b2;
   double res2 = 0.0;
-
-
-  tol2 = tol * tol;
-
-  xt = (double *) malloc (sizeof (double) * n);
-  r  = (double *) malloc (sizeof (double) * n);
-  rt = (double *) malloc (sizeof (double) * n);
-  rs = (double *) malloc (sizeof (double) * n);
-  p  = (double *) malloc (sizeof (double) * n);
-  ps = (double *) malloc (sizeof (double) * n);
-  atps = (double *) malloc (sizeof (double) * n);
-  ap = (double *) malloc (sizeof (double) * n);
-
-  // initial guess
-  dcopy_ (&n, b, &i_1, x, &i_1);
 
   dcopy_ (&n, x, &i_1, xt, &i_1); // xt = x
   
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); // r = A.x - b
 
   dcopy_ (&n, r, &i_1, rt, &i_1); // rt = r
@@ -107,21 +108,30 @@ qmr (int n, const double *b, double *x,
   dcopy_ (&n, r, &i_1, p,  &i_1); // p  = r
   dcopy_ (&n, r, &i_1, ps, &i_1); // p* = r
 
-  t2 = ddot_ (&n, rt, &i_1, rt, &i_1); // t2 = (rt, rt)
 
+  double t2 = ddot_ (&n, rt, &i_1, rt, &i_1); // t2 = (rt, rt)
+
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes_trans (n, ps, atps, user_data); // atps = At.p*
-      patps = ddot_ (&n, p, &i_1, atps, &i_1); // patps = (p, At.p*)
-      rtrs = ddot_ (&n, rt, &i_1, rs, &i_1); // rtrs = (rt, r*)
-      delta = - rtrs / patps;
+      res2 = ddot_ (&n, r, &i_1, r, &i_1);
+      if (it->debug == 2)
+	{
+	  fprintf (stdout, "libiter-qmr %d %e\n", i, res2 / b2);
+	}
+      if (res2 <= eps2) break;
 
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes_t (n, ps, atps, atimes_param); // atps = At.p*
+      double patps = ddot_ (&n, p, &i_1, atps, &i_1); // patps = (p, At.p*)
+      double rtrs = ddot_ (&n, rt, &i_1, rs, &i_1); // rtrs = (rt, r*)
+      double delta = - rtrs / patps;
+
+      atimes (n, p, ap, atimes_param); // ap = A.p
       daxpy_ (&n, &delta, ap, &i_1, rt, &i_1); // rt += delta A.ps
       daxpy_ (&n, &delta, atps, &i_1, rs, &i_1); // r* += delta At.ps
 
-      rtrs1 = ddot_ (&n, rt, &i_1, rs, &i_1); // rtrs = (rt, r*) for news
-      beta = rtrs1 / rtrs;
+      double rtrs1 = ddot_ (&n, rt, &i_1, rs, &i_1); // rtrs = (rt, r*) for news
+      double beta = rtrs1 / rtrs;
       rtrs = rtrs1;
 
       daxpy_ (&n, &delta, p, &i_1, xt, &i_1); // xt += delta p(old)
@@ -132,19 +142,16 @@ qmr (int n, const double *b, double *x,
       dscal_ (&n, &beta, ps, &i_1); // p* = beta p*(old)
       daxpy_ (&n, &d_1, rs, &i_1, ps, &i_1); // p* = r* + beta p*(old)
 
-      rt2 = ddot_ (&n, rt, &i_1, rt, &i_1); // rt2 = (rt, rt)
+      double rt2 = ddot_ (&n, rt, &i_1, rt, &i_1); // rt2 = (rt, rt)
       t2 = 1.0 / ((1.0 / t2) + (1.0 / rt2));
-      gamma = t2 / rt2;
+      double gamma = t2 / rt2;
 
-      d_1_gamma = 1.0 - gamma;
+      double d_1_gamma = 1.0 - gamma;
       dscal_ (&n, &d_1_gamma, x, &i_1); // x = (1-gamma) x(old)
       daxpy_ (&n, &gamma, xt, &i_1, x, &i_1); // x += gamma(xt - x(old))
 
       dscal_ (&n, &d_1_gamma, r, &i_1); // r = (1-gamma) r(old)
       daxpy_ (&n, &gamma, rt, &i_1, r, &i_1); // r += gamma(rt - r(old))
-
-      res2 = ddot_ (&n, r, &i_1, r, &i_1);
-      if (res2 < tol2) break;
     }
 
   free (xt);
@@ -156,6 +163,11 @@ qmr (int n, const double *b, double *x,
   free (atps);
   free (ap);
 
-  *iter = i;
-  *res = sqrt (res2);
+  if (it->debug == 1)
+    {
+      fprintf (stdout, "libiter-qmr %d %e\n", i, res2 / b2);
+    }
+
+  it->niter = i;
+  it->res2  = res2 / b2;
 }

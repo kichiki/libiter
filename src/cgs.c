@@ -1,6 +1,6 @@
 /* CGS -- Weiss, Algorithm 11
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgs.c,v 2.3 2006/10/10 19:53:27 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: cgs.c,v 2.4 2007/11/23 05:04:50 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "libiter.h"
+#include "memory-check.h" // CHECK_MALLOC
 
 
 #ifdef HAVE_CBLAS_H
@@ -63,71 +64,73 @@ dscal_(int* N,
 
 
 /* Ref: Weiss, Algorithm 11 CGS
+ * INPUT
+ *   n : dimension of the problem
+ *   b [n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x [n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 cgs (int n, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
-     void * user_data,
-     struct iter * it_param)
+     void *atimes_param,
+     struct iter *it)
 {
-  double tol, tol2;
-  int itmax;
-
-  int i;
-
-  double * r;
-  double * r0;
-  double * p;
-  double * u;
-  double * ap; // A.p
-  double * q;
-  double * t;
-
-  //double * bqu;
-  double *qu;
-
-  double r0ap; // (r0*, A.p)
-
-  double rho, rho1;
-  double delta;
-  double beta;
-
-  double res2 = 0.0;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
 
   int i_1 = 1;
-  double d_1 = 1.0;
   double d_m1 = -1.0;
   double d_2 = 2.0;
 
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
+  double eps2 = it->eps * it->eps;
+  int itmax = it->max;
+
+  double *r  = (double *)malloc (sizeof (double) * n);
+  double *r0 = (double *)malloc (sizeof (double) * n);
+  double *p  = (double *)malloc (sizeof (double) * n);
+  double *u  = (double *)malloc (sizeof (double) * n);
+  double *ap = (double *)malloc (sizeof (double) * n);
+  double *q  = (double *)malloc (sizeof (double) * n);
+  double *t  = (double *)malloc (sizeof (double) * n);
+  CHECK_MALLOC (r,  "cgs");
+  CHECK_MALLOC (r0, "cgs");
+  CHECK_MALLOC (p,  "cgs");
+  CHECK_MALLOC (u,  "cgs");
+  CHECK_MALLOC (ap, "cgs");
+  CHECK_MALLOC (q,  "cgs");
+  CHECK_MALLOC (t,  "cgs");
 
 
-  tol = it_param->eps;
-  tol2 = tol * tol;
-  itmax = it_param->max;
+  double r0ap;
+  double rho, rho1;
+  double delta;
+  double beta;
 
-  r  = (double *) malloc (sizeof (double) * n);
-  r0 = (double *) malloc (sizeof (double) * n);
-  p  = (double *) malloc (sizeof (double) * n);
-  u  = (double *) malloc (sizeof (double) * n);
-  ap = (double *) malloc (sizeof (double) * n);
-  q  = (double *) malloc (sizeof (double) * n);
-  t  = (double *) malloc (sizeof (double) * n);
+  double res2 = 0.0;
 
 #ifdef HAVE_CBLAS_H
-  /* use ATLAS' CBLAS routines */
+  /**
+   * ATLAS version
+   */
 
-  // initial guess
-  cblas_dcopy (n, b, 1, x, 1);
+  double b2 = cblas_ddot (n, b, 1, b, 1); // (b,b)
+  eps2 *= b2;
 
   // initial residue
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   cblas_daxpy (n, -1.0, b, 1, r, 1); // r = A.x - b
 
   cblas_dcopy (n, r, 1, r0, 1); // r0* = r
@@ -136,9 +139,10 @@ cgs (int n, const double *b, double *x,
 
   rho = cblas_ddot (n, r0, 1, r, 1); // rho = (r0*, r)
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes (n, p, ap, atimes_param); // ap = A.p
       r0ap = cblas_ddot (n, r0, 1, ap, 1); // r0ap = (r0*, A.p)
       delta = - rho / r0ap;
 
@@ -146,23 +150,24 @@ cgs (int n, const double *b, double *x,
       cblas_dscal (n, 2.0, q, 1); // q = 2 u
       cblas_daxpy (n, delta, ap, 1, q, 1); // q = 2 u + delta A.p
 
-      atimes (n, q, t, user_data); // t = A.q
+      atimes (n, q, t, atimes_param); // t = A.q
 
       cblas_daxpy (n, delta, t, 1, r, 1); // r = r + delta t
       cblas_daxpy (n, delta, q, 1, x, 1); // x = x + delta q
 
       res2 = cblas_ddot (n, r, 1, r, 1);
-      if (it_param->debug == 2)
+      if (it->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-cgs %d %e\n", i, res2);
+	  fprintf (it->out, "libiter-cgs %d %e\n", i, res2 / b2);
 	}
-      if (res2 < tol2) break;
+      if (res2 <= eps2) break;
 
       rho1 = cblas_ddot (n, r0, 1, r, 1); // rho = (r0*, r)
       beta = rho1 / rho;
       rho = rho1;
 
-      qu = t; // here t is not used so that this is used for working area.
+      // here t is not used so that this is used for working area.
+      double *qu = t;
       cblas_dcopy (n, q, 1, qu, 1); // qu = q
       cblas_daxpy (n, -1.0, u, 1, qu, 1); // qu = q - u
       cblas_dcopy (n, r, 1, u, 1); // u = r
@@ -175,13 +180,15 @@ cgs (int n, const double *b, double *x,
 
 #else // !HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
-  /* use Fortran BLAS routines */
+  /**
+   * BLAS version
+   */
 
-  // initial guess
-  dcopy_ (&n, b, &i_1, x, &i_1);
+  double b2 = ddot_ (&n, b, &i_1, b, &i_1); // (b,b)
+  eps2 *= b2;
 
   // initial residue
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); // r = A.x - b
 
   dcopy_ (&n, r, &i_1, r0, &i_1); // r0* = r
@@ -190,9 +197,10 @@ cgs (int n, const double *b, double *x,
 
   rho = ddot_ (&n, r0, &i_1, r, &i_1); // rho = (r0*, r)
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes (n, p, ap, atimes_param); // ap = A.p
       r0ap = ddot_ (&n, r0, &i_1, ap, &i_1); // r0ap = (r0*, A.p)
       delta = - rho / r0ap;
 
@@ -200,23 +208,24 @@ cgs (int n, const double *b, double *x,
       dscal_ (&n, &d_2, q, &i_1); // q = 2 u
       daxpy_ (&n, &delta, ap, &i_1, q, &i_1); // q = 2 u + delta A.p
 
-      atimes (n, q, t, user_data); // t = A.q
+      atimes (n, q, t, atimes_param); // t = A.q
 
       daxpy_ (&n, &delta, t, &i_1, r, &i_1); // r = r + delta t
       daxpy_ (&n, &delta, q, &i_1, x, &i_1); // x = x + delta q
 
       res2 = ddot_ (&n, r, &i_1, r, &i_1);
-      if (it_param->debug == 2)
+      if (it->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-cgs %d %e\n", i, res2);
+	  fprintf (it->out, "libiter-cgs %d %e\n", i, res2 / b2);
 	}
-      if (res2 < tol2) break;
+      if (res2 <= eps2) break;
 
       rho1 = ddot_ (&n, r0, &i_1, r, &i_1); // rho = (r0*, r)
       beta = rho1 / rho;
       rho = rho1;
 
-      qu = t; // here t is not used so that this is used for working area.
+      // here t is not used so that this is used for working area.
+      double *qu = t;
       dcopy_ (&n, q, &i_1, qu, &i_1); // qu = q
       daxpy_ (&n, &d_m1, u, &i_1, qu, &i_1); // qu = q - u
       dcopy_ (&n, r, &i_1, u, &i_1); // u = r
@@ -228,13 +237,15 @@ cgs (int n, const double *b, double *x,
     }
 
 # else // !HAVE_BLAS_H
-  /* use local BLAS routines */
+  /**
+   * local BLAS version
+   */
 
-  // initial guess
-  my_dcopy (n, b, 1, x, 1);
+  double b2 = my_ddot (n, b, 1, b, 1); // (b,b)
+  eps2 *= b2;
 
   // initial residue
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   my_daxpy (n, -1.0, b, 1, r, 1); // r = A.x - b
 
   my_dcopy (n, r, 1, r0, 1); // r0* = r
@@ -243,9 +254,10 @@ cgs (int n, const double *b, double *x,
 
   rho = my_ddot (n, r0, 1, r, 1); // rho = (r0*, r)
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes (n, p, ap, atimes_param); // ap = A.p
       r0ap = my_ddot (n, r0, 1, ap, 1); // r0ap = (r0*, A.p)
       delta = - rho / r0ap;
 
@@ -253,23 +265,24 @@ cgs (int n, const double *b, double *x,
       my_dscal (n, 2.0, q, 1); // q = 2 u
       my_daxpy (n, delta, ap, 1, q, 1); // q = 2 u + delta A.p
 
-      atimes (n, q, t, user_data); // t = A.q
+      atimes (n, q, t, atimes_param); // t = A.q
 
       my_daxpy (n, delta, t, 1, r, 1); // r = r + delta t
       my_daxpy (n, delta, q, 1, x, 1); // x = x + delta q
 
       res2 = my_ddot (n, r, 1, r, 1);
-      if (it_param->debug == 2)
+      if (it->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-cgs %d %e\n", i, res2);
+	  fprintf (it->out, "libiter-cgs %d %e\n", i, res2 / b2);
 	}
-      if (res2 < tol2) break;
+      if (res2 <= eps2) break;
 
       rho1 = my_ddot (n, r0, 1, r, 1); // rho = (r0*, r)
       beta = rho1 / rho;
       rho = rho1;
 
-      qu = t; // here t is not used so that this is used for working area.
+      // here t is not used so that this is used for working area.
+      double *qu = t;
       my_dcopy (n, q, 1, qu, 1); // qu = q
       my_daxpy (n, -1.0, u, 1, qu, 1); // qu = q - u
       my_dcopy (n, r, 1, u, 1); // u = r
@@ -291,8 +304,11 @@ cgs (int n, const double *b, double *x,
   free (q);
   free (t);
 
-  if (it_param->debug == 1)
+  if (it->debug == 1)
     {
-      fprintf (it_param->out, "libiter-cgs it= %d res^2= %e\n", i, res2);
+      fprintf (it->out, "libiter-cgs it= %d res^2= %e\n", i, res2);
     }
+
+  it->niter = i;
+  it->res2  = res2 / b2;
 }

@@ -1,6 +1,6 @@
 /* Steepest Descent -- Weiss' Algorithm 1
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: steepest.c,v 2.2 2006/10/10 18:06:16 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: steepest.c,v 2.3 2007/11/23 05:02:44 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "libiter.h"
+#include "memory-check.h" // CHECK_MALLOC
 
 
 #ifdef HAVE_CBLAS_H
@@ -64,26 +65,25 @@ dscal_(int* N,
 
 
 /* Steepest Descent -- Weiss' Algorithm 1
+ *   n : dimension of the problem
+ *   b [n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x [n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 steepest (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
-	  void * user_data,
+	  void *atimes_param,
 	  struct iter * it_param)
 {
-  double tol, tol2;
-  int itmax;
-
-  int i;
-
-  double * r;
-  double * ar;
-
-  double r2 = 0.0;
-  double rar;
-
-  double delta;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
@@ -94,95 +94,106 @@ steepest (int n, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
+  double eps2 = it_param->eps * it_param->eps;
+  int itmax = it_param->max;
 
-  tol = it_param->eps;
-  tol2 = tol * tol;
-  itmax = it_param->max;
+  double *r  = (double *) malloc (sizeof (double) * n);
+  double *ar = (double *) malloc (sizeof (double) * n);
+  CHECK_MALLOC (r,  "steepest");
+  CHECK_MALLOC (ar, "steepest");
 
-  r  = (double *) malloc (sizeof (double) * n);
-  ar = (double *) malloc (sizeof (double) * n);
+  double res2 = 0.0; // for compiler warning
 
 #ifdef HAVE_CBLAS_H
-  /* use ATLAS' CBLAS routines */
+  /**
+   * ATLAS version
+   */
 
-  // initial guess
-  cblas_dcopy (n, b, 1, x, 1);
+  double b2 = cblas_ddot (n, b, 1, b, 1); // (b,b)
+  eps2 *= b2;
 
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   cblas_daxpy (n, -1.0, b, 1, r, 1); // r = A.x - b
   
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      r2 = cblas_ddot (n, r, 1, r, 1); // r2 = (r, r)
+      res2 = cblas_ddot (n, r, 1, r, 1); // res2 = (r, r)
       if (it_param->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, r2);
+	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
 	}
-      if (r2 <= tol2) break;
+      if (res2 <= eps2) break;
       
-      atimes (n, r, ar, user_data); // ar = A.r
-      rar = cblas_ddot (n, r, 1, ar, 1); // rar = (r, A.r)
+      atimes (n, r, ar, atimes_param); // ar = A.r
+      double rar = cblas_ddot (n, r, 1, ar, 1); // rar = (r, A.r)
 
-      delta = - r2 / rar; // delta = - (r, r) / (r, A.r)
+      double delta = - res2 / rar; // delta = - (r, r) / (r, A.r)
       
-      cblas_daxpy (n, delta, r, 1, x, 1); // x += delta r
+      cblas_daxpy (n, delta, r,  1, x, 1); // x += delta r
       cblas_daxpy (n, delta, ar, 1, r, 1); // r += delta A.r
 
     }
 
 #else // !HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
-  /* use Fortran BLAS routines */
+  /**
+   * BLAS version
+   */
 
-  // initial guess
-  dcopy_ (&n, b, &i_1, x, &i_1);
+  double b2 = ddot_ (&n, b, &i_1, b, &i_1); // (b,b)
+  eps2 *= b2;
 
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); // r = A.x - b
   
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      r2 = ddot_ (&n, r, &i_1, r, &i_1); // r2 = (r, r)
+      res2 = ddot_ (&n, r, &i_1, r, &i_1); // res2 = (r, r)
       if (it_param->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, r2);
+	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
 	}
-      if (r2 <= tol2) break;
+      if (res2 <= eps2) break;
       
-      atimes (n, r, ar, user_data); // ar = A.r
-      rar = ddot_ (&n, r, &i_1, ar, &i_1); // rar = (r, A.r)
+      atimes (n, r, ar, atimes_param); // ar = A.r
+      double rar = ddot_ (&n, r, &i_1, ar, &i_1); // rar = (r, A.r)
 
-      delta = - r2 / rar; // delta = - (r, r) / (r, A.r)
+      double delta = - res2 / rar; // delta = - (r, r) / (r, A.r)
       
-      daxpy_ (&n, &delta, r, &i_1, x, &i_1); // x += delta r
+      daxpy_ (&n, &delta, r,  &i_1, x, &i_1); // x += delta r
       daxpy_ (&n, &delta, ar, &i_1, r, &i_1); // r += delta A.r
 
     }
 
 # else // !HAVE_BLAS_H
-  /* use local BLAS routines */
+  /**
+   * local BLAS version
+   */
 
-  // initial guess
-  my_dcopy (n, b, 1, x, 1);
+  double b2 = my_ddot (n, b, 1, b, 1); // (b,b)
+  eps2 *= b2;
 
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   my_daxpy (n, -1.0, b, 1, r, 1); // r = A.x - b
   
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      r2 = my_ddot (n, r, 1, r, 1); // r2 = (r, r)
+      res2 = my_ddot (n, r, 1, r, 1); // res2 = (r, r)
       if (it_param->debug == 2)
 	{
-	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, r2);
+	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
 	}
-      if (r2 <= tol2) break;
+      if (res2 <= eps2) break;
       
-      atimes (n, r, ar, user_data); // ar = A.r
-      rar = my_ddot (n, r, 1, ar, 1); // rar = (r, A.r)
+      atimes (n, r, ar, atimes_param); // ar = A.r
+      double rar = my_ddot (n, r, 1, ar, 1); // rar = (r, A.r)
 
-      delta = - r2 / rar; // delta = - (r, r) / (r, A.r)
+      double delta = - res2 / rar; // delta = - (r, r) / (r, A.r)
       
-      my_daxpy (n, delta, r, 1, x, 1); // x += delta r
+      my_daxpy (n, delta, r,  1, x, 1); // x += delta r
       my_daxpy (n, delta, ar, 1, r, 1); // r += delta A.r
 
     }
@@ -196,6 +207,9 @@ steepest (int n, const double *b, double *x,
 
   if (it_param->debug == 1)
     {
-      fprintf (it_param->out, "libiter-steepest %d %e\n", i, r2);
+      fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
     }
+
+  it_param->niter = i;
+  it_param->res2  = res2 / b2;
 }
