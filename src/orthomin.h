@@ -1,7 +1,7 @@
 /* header file of orthomin.c --
  * orthomin scheme
  * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: orthomin.h,v 2.6 2007/11/22 05:49:00 kichiki Exp $
+ * $Id: orthomin.h,v 2.7 2007/11/23 04:59:33 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -30,49 +30,47 @@
 #define	_ORTHOMIN_H_
 
 
-void
-otmk (int m, const double *b, double *x,
-      int kres, int kend,
-      double eps, double hnor,
-      int *iter, double *hg,
-      void (*myatimes) (int, const double *, double *, void *),
-      void * user_data);
-
-
 /* orthomin(k) method with BLAS/ATLAS
  * INPUT
  *   m : dimension of the problem
  *   b[m] : r-h-s vector
- *   atimes (int m, double *x, double *b) : calc matrix-vector product
- *   atimes_param : pointer to be passed to atimes routines
- *   it : struct iter. max, restart, log10_eps are used.
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
  *   x[m] : solution
- *   *iter : # of iteration
- *   *hg : log10(residual)
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
-otmk_ (int m, const double *b, double *x,
-       int *iter, double *hg,
-       void (*atimes) (int, const double *, double *, void *),
-       void *atimes_param,
-       struct iter *it);
+otmk (int m, const double *b, double *x,
+      void (*atimes) (int, const double *, double *, void *),
+      void *atimes_param,
+      struct iter *it);
 
 /* orthomin(k) method with preconditioning
  * INPUT
  *   m : dimension of the problem
  *   b[m] : r-h-s vector
- *   atimes (int m, double *x, double *b) : calc matrix-vector product
- *   atimes_param : pointer to be passed to atimes routines
- *   it : struct iter. max, restart, log10_eps are used.
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int m, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
  *   x[m] : solution
- *   *iter : # of iteration
- *   *hg : log10(residual)
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 otmk_pc (int m, const double *b, double *x,
-	 int *iter, double *hg,
 	 void (*atimes) (int, const double *, double *, void *),
 	 void *atimes_param,
 	 void (*inv) (int, const double *, double *, void *),
