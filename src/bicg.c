@@ -1,6 +1,6 @@
 /* BiCG method -- Weiss' Algorithm 8 (BCG)
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bicg.c,v 2.1 2006/10/09 20:09:24 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: bicg.c,v 2.2 2007/11/23 05:06:21 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "libiter.h" // struct iter
+#include "memory-check.h" // CHECK_MALLOC
 
 
 /* BLAS functions */
@@ -45,83 +47,90 @@ dscal_(int* N,
 
 
 /* BiCG -- Weiss' Algorithm 8 BCG 
+ * INPUT
+ *   n : dimension of the problem
+ *   b[n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_t (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A^T.x = b.
+ *   atimes_param : parameters for atimes() and atimes_t().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x[n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 bicg (int n, const double *b, double *x,
-      double tol, int itmax,
-      int *iter, double *res,
       void (*atimes) (int, const double *, double *, void *),
-      void (*atimes_trans) (int, const double *, double *, void *),
-      void * user_data)
+      void (*atimes_t) (int, const double *, double *, void *),
+      void *atimes_param,
+      struct iter *it)
 {
-  int i;
+  int itmax = it->max;
+  double eps2 = it->eps * it->eps;
 
   int i_1 = 1;
   double d_1 = 1.0;
   double d_m1 = -1.0;
 
-  double * r;
-  double * rs;
-  double * p;
-  double * ps;
-  double * atps;
-  double * ap;
+  double *r    = (double *)malloc (sizeof (double) * n);
+  double *rs   = (double *)malloc (sizeof (double) * n);
+  double *p    = (double *)malloc (sizeof (double) * n);
+  double *ps   = (double *)malloc (sizeof (double) * n);
+  double *atps = (double *)malloc (sizeof (double) * n);
+  double *ap   = (double *)malloc (sizeof (double) * n);
+  CHECK_MALLOC (r,    "bicg");
+  CHECK_MALLOC (rs,   "bicg");
+  CHECK_MALLOC (p,    "bicg");
+  CHECK_MALLOC (ps,   "bicg");
+  CHECK_MALLOC (atps, "bicg");
+  CHECK_MALLOC (ap,   "bicg");
 
-  double patps;
-  double rrs, rrs1;
-
-  double delta;
-  double beta;
-
-  double tol2;
+  double b2 = ddot_ (&n, b, &i_1, b, &i_1);
+  eps2 *= b2;
   double res2 = 0.0;
 
-
-  tol2 = tol * tol;
-
-  r  = (double *) malloc (sizeof (double) * n);
-  rs = (double *) malloc (sizeof (double) * n);
-  p  = (double *) malloc (sizeof (double) * n);
-  ps = (double *) malloc (sizeof (double) * n);
-
-  atps = (double *) malloc (sizeof (double) * n);
-  ap = (double *) malloc (sizeof (double) * n);
-
-  // initial guess
-  dcopy_ (&n, b, &i_1, x, &i_1);
-
-  atimes (n, x, r, user_data); // r = A.x
+  atimes (n, x, r, atimes_param); // r = A.x
   daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); // r = A.x - b
 
   dcopy_ (&n, r, &i_1, rs, &i_1); // r* = r
   dcopy_ (&n, r, &i_1, p,  &i_1); // p  = r
   dcopy_ (&n, r, &i_1, ps, &i_1); // p* = r
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes_trans (n, ps, atps, user_data); // atps = At.p*
-      patps = ddot_ (&n, p, &i_1, atps, &i_1); // patps = (p, At.p*)
-      rrs = ddot_ (&n, r, &i_1, rs, &i_1); // rrs = (r, r*)
-      delta = - rrs / patps;
+      atimes_t (n, ps, atps, atimes_param); // atps = At.p*
+      double patps = ddot_ (&n, p, &i_1, atps, &i_1); // patps = (p, At.p*)
+      double rrs   = ddot_ (&n, r, &i_1, rs, &i_1);   // rrs = (r, r*)
+      double delta = - rrs / patps;
 
-      atimes (n, p, ap, user_data); // ap = A.p
-      daxpy_ (&n, &delta, ap, &i_1, r, &i_1); // r += delta A.ps
+      atimes (n, p, ap, atimes_param); // ap = A.p
+      daxpy_ (&n, &delta, ap,   &i_1, r,  &i_1); // r  += delta A.ps
       daxpy_ (&n, &delta, atps, &i_1, rs, &i_1); // r* += delta At.ps
 
-      rrs1 = ddot_ (&n, r, &i_1, rs, &i_1); // rrs = (r, r*) for news
-      beta = rrs1 / rrs;
+      double rrs1 = ddot_ (&n, r, &i_1, rs, &i_1); // rrs = (r, r*) for news
+      double beta = rrs1 / rrs;
       rrs = rrs1;
 
       daxpy_ (&n, &delta, p, &i_1, x, &i_1); // x += delta p(old)
 
-      dscal_ (&n, &beta, p, &i_1); // p = beta p(old)
+      dscal_ (&n, &beta, p, &i_1);         // p = beta p(old)
       daxpy_ (&n, &d_1, r, &i_1, p, &i_1); // p = r + beta p(old)
 
-      dscal_ (&n, &beta, ps, &i_1); // p* = beta p*(old)
+      dscal_ (&n, &beta, ps, &i_1);          // p* = beta p*(old)
       daxpy_ (&n, &d_1, rs, &i_1, ps, &i_1); // p* = r* + beta p*(old)
 
       res2 = ddot_ (&n, r, &i_1, r, &i_1);
-      if (res2 < tol2) break;
+      if (it->debug == 2)
+	{
+	  fprintf (stdout, "libiter-bicg %d %e\n", i, res2 / b2);
+	}
+      if (res2 <= eps2) break;
     }
 
   free (r);
@@ -131,6 +140,11 @@ bicg (int n, const double *b, double *x,
   free (atps);
   free (ap);
 
-  *iter = i;
-  *res = sqrt (res2);
+  if (it->debug == 1)
+    {
+      fprintf (stdout, "libiter-bicg %d %e\n", i, res2 / b2);
+    }
+
+  it->niter = i;
+  it->res2  = res2 / b2;
 }
