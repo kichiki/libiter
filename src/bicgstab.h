@@ -1,6 +1,6 @@
 /* BiCGSTAB - Weiss, Algorithm 12
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bicgstab.h,v 2.2 2006/10/10 18:09:24 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: bicgstab.h,v 2.3 2007/11/23 05:17:21 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,12 +21,25 @@
 
 
 /* Ref: Weiss, Algorithm 12 BiCGSTAB
+ * INPUT
+ *   n : dimension of the problem
+ *   b [n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x [n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 bicgstab (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
-	  void * user_data,
-	  struct iter * it_param);
+	  void *atimes_param,
+	  struct iter *it);
 
 
 #endif /* !_BICGSTAB_H_ */

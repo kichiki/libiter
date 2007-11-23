@@ -1,6 +1,6 @@
 /* BiCGSTAB - Weiss, Algorithm 12
- * Copyright (C) 2006 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bicgstab.c,v 2.3 2006/10/10 19:53:27 ichiki Exp $
+ * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: bicgstab.c,v 2.4 2007/11/23 05:16:32 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "libiter.h"
+#include "memory-check.h" // CHECK_MALLOC
 
 
 /* CBLAS is a bit unstable for this scheme,
@@ -71,36 +72,26 @@ dscal_(int* N,
 
 
 /* Ref: Weiss, Algorithm 12 BiCGSTAB
+ * INPUT
+ *   n : dimension of the problem
+ *   b [n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   x [n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
 void
 bicgstab (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
-	  void * user_data,
-	  struct iter * it_param)
+	  void *atimes_param,
+	  struct iter *it)
 {
-  double tol, tol2;
-  int itmax;
-
-  int i;
-
-  double * r;
-  double * rs;
-  double * p;
-  double * ap; // A.p
-  double * s;
-  double * t;
-
-  double rsap; // (r*, A.p)
-  double st;
-  double t2;
-
-  double rho, rho1;
-  double delta;
-  double gamma;
-  double beta;
-
-  double res2 = 0.0;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
@@ -113,24 +104,42 @@ bicgstab (int n, const double *b, double *x,
 #endif // !HAVE_CBLAS_H
 
 
-  tol = it_param->eps;
-  tol2 = tol * tol;
-  itmax = it_param->max;
+  double eps2 = it->eps * it->eps;
+  int itmax = it->max;
 
-  r  = (double *) malloc (sizeof (double) * n);
-  rs = (double *) malloc (sizeof (double) * n);
-  p  = (double *) malloc (sizeof (double) * n);
-  ap = (double *) malloc (sizeof (double) * n);
-  s  = (double *) malloc (sizeof (double) * n);
-  t  = (double *) malloc (sizeof (double) * n);
+  double *r  = (double *)malloc (sizeof (double) * n);
+  double *rs = (double *)malloc (sizeof (double) * n);
+  double *p  = (double *)malloc (sizeof (double) * n);
+  double *ap = (double *)malloc (sizeof (double) * n);
+  double *s  = (double *)malloc (sizeof (double) * n);
+  double *t  = (double *)malloc (sizeof (double) * n);
+  CHECK_MALLOC (r,  "bicgstab");
+  CHECK_MALLOC (rs, "bicgstab");
+  CHECK_MALLOC (p,  "bicgstab");
+  CHECK_MALLOC (ap, "bicgstab");
+  CHECK_MALLOC (s,  "bicgstab");
+  CHECK_MALLOC (t,  "bicgstab");
+
+  double rsap; // (r*, A.p)
+  double st;
+  double t2;
+
+  double rho, rho1;
+  double delta;
+  double gamma;
+  double beta;
+
+  double res2 = 0.0;
 
 #ifdef HAVE_CBLAS_H
-  /* use ATLAS' CBLAS routines */
+  /**
+   * ATLAS version
+   */
 
-  // initial guess
-  cblas_dcopy (n, b, 1, x, 1);
-  
-  atimes (n, x, r, user_data);       // r = A.x ...
+  double b2 = cblas_ddot (n, b, 1, b, 1); // (b,b)
+  eps2 *= b2;
+
+  atimes (n, x, r, atimes_param);       // r = A.x ...
   cblas_daxpy (n, -1.0, b, 1, r, 1); //         - b
 
   cblas_dcopy (n, r, 1, rs, 1); // r* = r
@@ -138,16 +147,17 @@ bicgstab (int n, const double *b, double *x,
 
   rho = cblas_ddot (n, rs, 1, r, 1); // rho = (r*, r)
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes (n, p, ap, atimes_param); // ap = A.p
       rsap = cblas_ddot (n, rs, 1, ap, 1); // rsap = (r*, A.p)
 
       delta = - rho / rsap;
 
       cblas_dcopy (n, r, 1, s, 1);         // s = r ...
       cblas_daxpy (n, delta, ap, 1, s, 1); //   + delta A.p
-      atimes (n, s, t, user_data); // t = A.s
+      atimes (n, s, t, atimes_param); // t = A.s
 
       st = cblas_ddot (n, s, 1, t, 1); // st = (s, t)
       t2 = cblas_ddot (n, t, 1, t, 1); // t2 = (t, t)
@@ -160,13 +170,13 @@ bicgstab (int n, const double *b, double *x,
       cblas_daxpy (n, gamma, s, 1, x, 1); //       + gamma s
 
       res2 = cblas_ddot (n, r, 1, r, 1);
-      if (it_param->debug == 2)
+      if (it->debug == 2)
 	{
-	  fprintf (it_param->out,
+	  fprintf (it->out,
 		   "libiter-bicgstab(cblas) %d %e\n",
-		   i, res2);
+		   i, res2 / b2);
 	}
-      if (res2 < tol2) break;
+      if (res2 <= eps2) break;
 
       rho1 = cblas_ddot (n, rs, 1, r, 1); // rho = (r*, r)
       beta = rho1 / rho * delta / gamma;
@@ -179,12 +189,14 @@ bicgstab (int n, const double *b, double *x,
 
 #else // !HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
-  /* use Fortran BLAS routines */
+  /**
+   * BLAS version
+   */
 
-  // initial guess
-  dcopy_ (&n, b, &i_1, x, &i_1);
-  
-  atimes (n, x, r, user_data);          // r = A.x ...
+  double b2 = ddot_ (&n, b, &i_1, b, &i_1); // (b,b)
+  eps2 *= b2;
+
+  atimes (n, x, r, atimes_param);          // r = A.x ...
   daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); //         - b
 
   dcopy_ (&n, r, &i_1, rs, &i_1); // r* = r
@@ -192,15 +204,16 @@ bicgstab (int n, const double *b, double *x,
 
   rho = ddot_ (&n, rs, &i_1, r, &i_1); // rho = (r*, r)
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes (n, p, ap, atimes_param); // ap = A.p
       rsap = ddot_ (&n, rs, &i_1, ap, &i_1); // rsap = (r*, A.p)
       delta = - rho / rsap;
 
       dcopy_ (&n, r, &i_1, s, &i_1);          // s = r ...
       daxpy_ (&n, &delta, ap, &i_1, s, &i_1); //   + delta A.p
-      atimes (n, s, t, user_data); // t = A.s
+      atimes (n, s, t, atimes_param); // t = A.s
 
       st = ddot_ (&n, s, &i_1, t, &i_1); // st = (s, t)
       t2 = ddot_ (&n, t, &i_1, t, &i_1); // t2 = (t, t)
@@ -213,13 +226,13 @@ bicgstab (int n, const double *b, double *x,
       daxpy_ (&n, &gamma, s, &i_1, x, &i_1); //       + gamma s
 
       res2 = ddot_ (&n, r, &i_1, r, &i_1);
-      if (it_param->debug == 2)
+      if (it->debug == 2)
 	{
-	  fprintf (it_param->out,
+	  fprintf (it->out,
 		   "libiter-bicgstab(blas) %d %e\n",
-		   i, res2);
+		   i, res2 / b2);
 	}
-      if (res2 < tol2) break;
+      if (res2 <= eps2) break;
 
       rho1 = ddot_ (&n, rs, &i_1, r, &i_1); // rho = (r*, r)
       beta = rho1 / rho * delta / gamma;
@@ -231,12 +244,14 @@ bicgstab (int n, const double *b, double *x,
     }
 
 # else // !HAVE_BLAS_H
-  /* use local BLAS routines */
+  /**
+   * local BLAS version
+   */
 
-  // initial guess
-  my_dcopy (n, b, 1, x, 1);
-  
-  atimes (n, x, r, user_data);    // r = A.x ...
+  double b2 = my_ddot (n, b, 1, b, 1); // (b,b)
+  eps2 *= b2;
+
+  atimes (n, x, r, atimes_param);    // r = A.x ...
   my_daxpy (n, -1.0, b, 1, r, 1); //         - b
 
   my_dcopy (n, r, 1, rs, 1); // r* = r
@@ -244,15 +259,16 @@ bicgstab (int n, const double *b, double *x,
 
   rho = my_ddot (n, rs, 1, r, 1); // rho = (r*, r)
 
+  int i;
   for (i = 0; i < itmax; i ++)
     {
-      atimes (n, p, ap, user_data); // ap = A.p
+      atimes (n, p, ap, atimes_param); // ap = A.p
       rsap = my_ddot (n, rs, 1, ap, 1); // rsap = (r*, A.p)
       delta = - rho / rsap;
 
       my_dcopy (n, r, 1, s, 1);         // s = r ...
       my_daxpy (n, delta, ap, 1, s, 1); //   + delta A.p
-      atimes (n, s, t, user_data); // t = A.s
+      atimes (n, s, t, atimes_param); // t = A.s
 
       st = my_ddot (n, s, 1, t, 1); // st = (s, t)
       t2 = my_ddot (n, t, 1, t, 1); // t2 = (t, t)
@@ -265,13 +281,13 @@ bicgstab (int n, const double *b, double *x,
       my_daxpy (n, gamma, s, 1, x, 1); //       + gamma s
 
       res2 = my_ddot (n, r, 1, r, 1);
-      if (it_param->debug == 2)
+      if (it->debug == 2)
 	{
-	  fprintf (it_param->out,
+	  fprintf (it->out,
 		   "libiter-bicgstab(myblas) %d %e\n",
-		   i, res2);
+		   i, res2 / b2);
 	}
-      if (res2 < tol2) break;
+      if (res2 <= eps2) break;
 
       rho1 = my_ddot (n, rs, 1, r, 1); // rho = (r*, r)
       beta = rho1 / rho * delta / gamma;
@@ -292,8 +308,11 @@ bicgstab (int n, const double *b, double *x,
   free (s);
   free (t);
 
-  if (it_param->debug == 1)
+  if (it->debug == 1)
     {
-      fprintf (it_param->out, "libiter-bicgstab it= %d res^2= %e\n", i, res2);
+      fprintf (it->out, "libiter-bicgstab it= %d res^2= %e\n", i, res2 / b2);
     }
+
+  it->niter = i;
+  it->res2  = res2 / b2;
 }
