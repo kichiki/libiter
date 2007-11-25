@@ -1,6 +1,6 @@
 /* test code for libiter solvers
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: test-libiter.c,v 1.3 2007/11/23 04:44:09 kichiki Exp $
+ * $Id: test-libiter.c,v 1.4 2007/11/25 19:11:55 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,8 +30,11 @@ main (int argc, char** argv)
 {
   int check = 0;
 
-  check += check_3_all (2000, 20, 1.0e-7, // max, restart, eps
-			1, 1.0e-6); // for check
+  check += check_3_all (2000, 20, 1.0e-12, // max, restart, eps
+			1, 1.0e-12); // for check
+
+  check += check_3_all_ (2000, 20, 1.0e-12, // max, restart, eps
+			 1, 3.2e-12); // for check
 
   check += check_symmetric_all (500, // dimension
 				10000, 20, 1.0e-12, // max, restart, eps
