@@ -1,6 +1,6 @@
 /* ATPRES -- Weiss, Algorithm 5
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: atpres.c,v 1.6 2007/11/25 18:47:36 kichiki Exp $
+ * $Id: atpres.c,v 1.7 2007/11/25 19:06:50 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -96,7 +96,6 @@ atpres (int n, const double *b, double *x,
   /* use Fortran BLAS routines */
 
   int i_1 = 1;
-  double d_1 = 1.0;
   double d_m1 = -1.0;
 
 # endif // !HAVE_BLAS_H
@@ -238,13 +237,13 @@ atpres (int n, const double *b, double *x,
       atimes (n, x, tmp, atimes_param);
       //my_daxpyz (n, - 1.0, b, 1, tmp, 1, r, 1);
       daxpy_ (&n, &d_m1, b, &i_1, tmp, &i_1);
-      dcopy_ (&n, tmp, &i_i, r, &i_1);
+      dcopy_ (&n, tmp, &i_1, r, &i_1);
     }
   else
     {
       //my_dscalz (n, - 1.0, b, 1, r, 1);
       dcopy_ (&n, b, &i_1, r, &i_1);
-      dscal_ (&n, &d_m1, r, &i_i);
+      dscal_ (&n, &d_m1, r, &i_1);
     }
 
   /* initial condition */
