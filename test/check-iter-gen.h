@@ -1,7 +1,7 @@
 /* header file for check-gen.c --
  * test code for iterative schemes in general
  * Copyright (C) 2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: check-iter-gen.h,v 1.1 2007/11/23 04:43:41 kichiki Exp $
+ * $Id: check-iter-gen.h,v 1.2 2007/11/25 19:10:55 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-#ifndef	_CHECK_GEN_H_
-#define	_CHECK_GEN_H_
+#ifndef	_CHECK_ITER_GEN_H_
+#define	_CHECK_ITER_GEN_H_
 
 
 /*
@@ -77,9 +77,22 @@ int
 check_3_all (int it_max, int it_restart, double it_eps,
 	     int verbose, double tiny);
 
+/* check small problem for all schemes -- positive definite matrix
+ * the problem is
+ *  [3 2 1]^{-1}  [ 1 -1  0 ]
+ *  [2 2 1]     = [-1  2 -1 ]
+ *  [1 1 1]       [ 0 -1  2 ]
+ * thereofre,
+ *  the solution of A.x = b for b = [2 1 1] is
+ *  x = [2-1+0, -2+2-1, 0-1+2] = [1, -1, 1]
+ */
+int
+check_3_all_ (int it_max, int it_restart, double it_eps,
+	      int verbose, double tiny);
+
 int
 check_symmetric_all (int n, int it_max, int it_restart, double it_eps,
 		     int verbose, double tiny);
 
 
-#endif /* !_CHECK_GEN_H_ */
+#endif /* !_CHECK_ITER_GEN_H_ */

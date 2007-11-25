@@ -1,6 +1,6 @@
 /* test code for iterative schemes in general
  * Copyright (C) 2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: check-iter-gen.c,v 1.1 2007/11/23 04:43:15 kichiki Exp $
+ * $Id: check-iter-gen.c,v 1.2 2007/11/25 19:10:20 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,8 +31,11 @@
 #include "steepest.h" // steepest()
 #include "cg.h"       // cg()
 #include "cgs.h"      // cgs()
+#include "bicgstab.h" // bicgstab(), another implementation (from Weiss)
 
-#include "gmres.h"    // 
+#include "cg_.h" // cg_(), cg_pc()
+
+#include "gmres.h"
 
 #include "bi-cgstab.h"// sta(), sta2(), gpb()
 #include "orthomin.h" // otmk()
@@ -47,9 +50,6 @@
 #include "bicg.h"
 
 
-/*
-#include "bicgstab.h"
-*/
 
 /* BLAS functions */
 void dgemv_(char *trans, int *m, int *n, double *alpha, double *a,
@@ -67,6 +67,7 @@ void dcopy_ (int *, double *, int *, double *, int *);
  *            the following schemes need only atimes()
  *              "steepest"
  *              "cg"
+ *              "cg_"
  *              "cgs"
  *              "bicgstab"
  *              "sta"
@@ -143,6 +144,12 @@ check_iter_gen (int n, const double *b, const double *x0,
       cg (n, b, x1, atimes, atimes_param, it);
       t1 = ptime_ms_d();
     }
+  else if (strcmp (solver, "cg_") == 0)
+    {
+      t0 = ptime_ms_d();
+      cg_ (n, b, x1, atimes, atimes_param, it);
+      t1 = ptime_ms_d();
+    }
   else if (strcmp (solver, "cgs") == 0)
     {
       t0 = ptime_ms_d();
@@ -151,7 +158,9 @@ check_iter_gen (int n, const double *b, const double *x0,
     }
   else if (strcmp (solver, "bicgstab") == 0)
     {
-      fprintf (stderr, "not yet implemented\n");
+      t0 = ptime_ms_d();
+      bicgstab (n, b, x1, atimes, atimes_param, it);
+      t1 = ptime_ms_d();
     }
   else if (strcmp (solver, "sta") == 0)
     {
@@ -181,7 +190,6 @@ check_iter_gen (int n, const double *b, const double *x0,
     {
       t0 = ptime_ms_d();
       gmres_m (n, b, x1, atimes, atimes_param, it);
-      //gmres_m_ (n, b, x1, atimes, atimes_param, it);
       t1 = ptime_ms_d();
     }
   /**
@@ -347,7 +355,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
     {
       fprintf (stdout,
 	       "==================================================\n"
-	       "check_3_gen (tiny = %e): start\n\n", tiny);
+	       "check_3_all (tiny = %e): start\n\n", tiny);
     }
 
   int check = 0;
@@ -385,8 +393,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // Steepest
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "steepest", it_max, it_restart, it_eps,
@@ -396,27 +403,40 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // CG
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cg", it_max, it_restart, it_eps,
 		    verbose, tiny);
+  // CG, another implementation
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cg_", it_max, it_restart, it_eps,
+		    verbose, tiny);
   // CGS
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cgs", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // Bi-CGSTAB (in Weiss)
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "bicgstab", it_max, it_restart, it_eps,
 		    verbose, tiny);
 
   // Bi-CGSTAB
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "sta", it_max, it_restart, it_eps,
@@ -424,8 +444,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // Bi-CGSTAB2
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "sta2", it_max, it_restart, it_eps,
@@ -434,8 +453,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // GPBi-CG
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "gpb", it_max, it_restart, it_eps,
@@ -444,8 +462,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // ORTHOMIN
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "otmk", it_max, it_restart, it_eps,
@@ -454,8 +471,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // GMRES
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, NULL,
-		    (void *)a,
+		    atimes_by_matrix, NULL, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "gmres", it_max, it_restart, it_eps,
@@ -467,8 +483,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // ATPRES
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, atimes_t_by_matrix,
-		    (void *)a,
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "atpres", it_max, it_restart, it_eps,
@@ -476,8 +491,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // CGNE
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, atimes_t_by_matrix,
-		    (void *)a,
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cgne", it_max, it_restart, it_eps,
@@ -486,8 +500,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // BICG
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, atimes_t_by_matrix,
-		    (void *)a,
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "bicg", it_max, it_restart, it_eps,
@@ -495,8 +508,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // BICO
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, atimes_t_by_matrix,
-		    (void *)a,
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "bico", it_max, it_restart, it_eps,
@@ -504,8 +516,7 @@ check_3_all (int it_max, int it_restart, double it_eps,
   // QMR
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    atimes_by_matrix, atimes_t_by_matrix,
-		    (void *)a,
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "qmr", it_max, it_restart, it_eps,
@@ -519,7 +530,212 @@ check_3_all (int it_max, int it_restart, double it_eps,
     {
       fprintf (stdout,
 	       "--------------------------------------------------\n"
-	       "check_3_gen (tiny = %e): finished\n", tiny);
+	       "check_3_all (tiny = %e): finished\n", tiny);
+
+      if (check == 0)
+	fprintf (stdout, " => PASSED\n");
+      else
+	fprintf (stdout, " => FAILED\n");
+
+      fprintf (stdout,
+	       "==================================================\n\n");
+    }
+
+  return (check);
+}
+
+/* check small problem for all schemes -- positive definite matrix
+ * the problem is
+ *  [3 2 1]^{-1}  [ 1 -1  0 ]
+ *  [2 2 1]     = [-1  2 -1 ]
+ *  [1 1 1]       [ 0 -1  2 ]
+ * thereofre,
+ *  the solution of A.x = b for b = [2 1 1] is
+ *  x = [2-1+0, -2+2-1, 0-1+2] = [1, -1, 1]
+ */
+int
+check_3_all_ (int it_max, int it_restart, double it_eps,
+	      int verbose, double tiny)
+{
+  if (verbose != 0)
+    {
+      fprintf (stdout,
+	       "==================================================\n"
+	       "check_3_all_ (tiny = %e): start\n\n", tiny);
+    }
+
+  int check = 0;
+
+
+  int n = 3;
+  double *a = (double *)malloc (sizeof (double) * n * n);
+  double *b = (double *)malloc (sizeof (double) * n);
+  double *x = (double *)malloc (sizeof (double) * n);
+  CHECK_MALLOC (a, "check_3_all");
+  CHECK_MALLOC (b, "check_3_all");
+  CHECK_MALLOC (x, "check_3_all");
+
+  a[0] = 3.0;
+  a[1] = 2.0;
+  a[2] = 1.0;
+
+  a[3] = 2.0;
+  a[4] = 2.0;
+  a[5] = 1.0;
+
+  a[6] = 1.0;
+  a[7] = 1.0;
+  a[8] = 1.0;
+
+  b[0] = 2.0;
+  b[1] = 1.0;
+  b[2] = 1.0;
+
+  x[0] = 1.0;
+  x[1] = -1.0;
+  x[2] = 1.0;
+
+  /* steepest descent method has some problem... */
+  // Steepest
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "steepest", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // CG
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cg", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // CG, another implementation
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cg_", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // CGS
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cgs", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // Bi-CGSTAB (in Weiss)
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "bicgstab", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // Bi-CGSTAB
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "sta", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // Bi-CGSTAB2
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "sta2", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // GPBi-CG
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "gpb", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // ORTHOMIN
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "otmk", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // GMRES
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "gmres", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  /**
+   * schemes with atimes_t()
+   */
+  // ATPRES
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "atpres", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // CGNE
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cgne", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // BICG
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "bicg", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // BICO
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "bico", it_max, it_restart, it_eps,
+		    verbose, tiny);
+  // QMR
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, atimes_t_by_matrix, (void *)a,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "qmr", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  free (a);
+  free (b);
+  free (x);
+
+  if (verbose != 0)
+    {
+      fprintf (stdout,
+	       "--------------------------------------------------\n"
+	       "check_3_all_ (tiny = %e): finished\n", tiny);
 
       if (check == 0)
 	fprintf (stdout, " => PASSED\n");
@@ -599,6 +815,15 @@ check_symmetric_all (int n, int it_max, int it_restart, double it_eps,
 		    "cg", it_max, it_restart, it_eps,
 		    verbose, tiny);
 
+  // CG, another implementation
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)mat,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cg_", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
   // CGS
   check +=
     check_iter_gen (n, b, b, // initial guess
@@ -606,6 +831,15 @@ check_symmetric_all (int n, int it_max, int it_restart, double it_eps,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cgs", it_max, it_restart, it_eps,
+		    verbose, tiny);
+
+  // Bi-CGSTAB (in Weiss)
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    atimes_by_matrix, NULL, (void *)mat,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "bicgstab", it_max, it_restart, it_eps,
 		    verbose, tiny);
 
   // Bi-CGSTAB
