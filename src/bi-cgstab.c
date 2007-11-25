@@ -1,6 +1,6 @@
 /* wrapper for iterative solver routines
  * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bi-cgstab.c,v 2.8 2007/11/23 04:58:22 kichiki Exp $
+ * $Id: bi-cgstab.c,v 2.9 2007/11/25 18:42:23 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -85,11 +85,12 @@ dscal_(int* N,
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta (int m, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
      void *atimes_param,
@@ -106,7 +107,7 @@ sta (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-
+  int ret = -1;
   int kend = it->max;
   double eps2 = it->eps * it->eps;
 
@@ -149,9 +150,13 @@ sta (int m, const double *b, double *x,
       res2 = cblas_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta(atlas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - zeta * q)
       cblas_daxpy (m, -zeta, q, 1, p, 1); // p = p - zeta * q
@@ -207,6 +212,7 @@ sta (int m, const double *b, double *x,
   // rho0 = (r0, r0)
   double rho0 = ddot_ (&m, r0, &i_1, r0, &i_1);
 
+  double mzeta = -zeta;
   int iter;
   for (iter = 0; iter<= kend; iter++)
     {
@@ -214,12 +220,20 @@ sta (int m, const double *b, double *x,
       res2 = ddot_ (&m, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta(blas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
+      if (res2 > 1.0e20)
+	{
+	  // already too big residual
+	  break;
+	}
 
       // p = r + beta * (p - zeta * q)
-      double mzeta = -zeta;
       daxpy_ (&m, &mzeta, q, &i_1, p, &i_1); // p = p - zeta * q
       dscal_ (&m, &beta, p, &i_1);           // p = beta * (p - zeta * q)
       daxpy_ (&m, &d_1, r, &i_1, p, &i_1);   // p = r + beta * (p - zeta * q)
@@ -281,9 +295,13 @@ sta (int m, const double *b, double *x,
       res2 = my_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta(myblas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - zeta * q)
       my_daxpy (m, -zeta, q, 1, p, 1); // p = p - zeta * q
@@ -325,7 +343,6 @@ sta (int m, const double *b, double *x,
 #endif // !HAVE_CBLAS_H
 
 
-end_sta:
   free (r0);
   free (p);
   free (q);
@@ -334,11 +351,12 @@ end_sta:
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-sta %d %e\n", iter, res2);
+      fprintf (it->out, "libiter-sta %d %e\n", iter, res2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }
 
 /* bi-cgstab method with precondition
@@ -355,11 +373,12 @@ end_sta:
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta_pc (int m, const double *b, double *x,
 	void (*atimes) (int, const double *, double *, void *),
 	void *atimes_param,
@@ -367,9 +386,6 @@ sta_pc (int m, const double *b, double *x,
 	void *inv_param,
 	struct iter *it)
 {
-  int kend = it->max;
-  double eps2 = it->eps * it->eps;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
@@ -380,6 +396,10 @@ sta_pc (int m, const double *b, double *x,
 
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
+
+  int ret = -1;
+  int kend = it->max;
+  double eps2 = it->eps * it->eps;
 
   double *r0 = (double *)calloc (m, sizeof (double));
   double *p  = (double *)calloc (m, sizeof (double));
@@ -424,9 +444,13 @@ sta_pc (int m, const double *b, double *x,
       res2 = cblas_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta_pc(atlas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - zeta * q)
       cblas_daxpy (m, -zeta, q, 1, p, 1); // p = p - zeta * q
@@ -488,6 +512,7 @@ sta_pc (int m, const double *b, double *x,
   // rho0 = (r0, r0)
   double rho0 = ddot_ (&m, r0, &i_1, r0, &i_1);
 
+  double mzeta = -zeta;
   int iter;
   for (iter = 0; iter<= kend; iter++)
     {
@@ -495,12 +520,15 @@ sta_pc (int m, const double *b, double *x,
       res2 = ddot_ (&m, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta_pc(blas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - zeta * q)
-      double mzeta = -zeta;
       daxpy_ (&m, &mzeta, q, &i_1, p, &i_1); // p = p - zeta * q
       dscal_ (&m, &beta, p, &i_1);           // p = beta * (p - zeta * q)
       daxpy_ (&m, &d_1, r, &i_1, p, &i_1);   // p = r + beta * (p - zeta * q)
@@ -568,9 +596,13 @@ sta_pc (int m, const double *b, double *x,
       res2 = my_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta_pc(myblas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - zeta * q)
       my_daxpy (m, -zeta, q, 1, p, 1); // p = p - zeta * q
@@ -616,7 +648,6 @@ sta_pc (int m, const double *b, double *x,
 #endif // !HAVE_CBLAS_H
 
 
-end_sta_pc:
   free (r0);
   free (p);
   free (q);
@@ -626,11 +657,12 @@ end_sta_pc:
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-sta_pc %d %e\n", iter, res2);
+      fprintf (it->out, "libiter-sta_pc %d %e\n", iter, res2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }
 
 
@@ -645,11 +677,12 @@ end_sta_pc:
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta2 (int m, const double *b, double *x,
       void (*atimes) (int, const double *, double *, void *),
       void *atimes_param,
@@ -666,7 +699,7 @@ sta2 (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-
+  int ret = -1;
   int kend = it->max;
   double eps2 = it->eps * it->eps;
 
@@ -719,9 +752,13 @@ sta2 (int m, const double *b, double *x,
       res2 = cblas_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta2 %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta2(atlas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta2;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - u)
       cblas_daxpy (m, -1.0, u, 1, p, 1); // p = p - u
@@ -825,9 +862,13 @@ sta2 (int m, const double *b, double *x,
       res2 = ddot_ (&m, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta2 %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta2(blas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta2;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - u)
       daxpy_ (&m, &d_m1, u, &i_1, p, &i_1); // p = p - u
@@ -931,9 +972,13 @@ sta2 (int m, const double *b, double *x,
       res2 = my_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta2 %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta2(myblas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta2;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - u)
       my_daxpy (m, -1.0, u, 1, p, 1); // p = p - u
@@ -1012,7 +1057,6 @@ sta2 (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-end_sta2:
   free (r0);
   free (w);
   free (q);
@@ -1025,11 +1069,12 @@ end_sta2:
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-st2 %d %e\n", iter, res2);
+      fprintf (it->out, "libiter-st2 %d %e\n", iter, res2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }
 
 /* bi-cgstab2 method with precondition
@@ -1046,11 +1091,12 @@ end_sta2:
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta2_pc (int m, const double *b, double *x,
 	 void (*atimes) (int, const double *, double *, void *),
 	 void *atimes_param,
@@ -1058,9 +1104,6 @@ sta2_pc (int m, const double *b, double *x,
 	 void *inv_param,
 	 struct iter *it)
 {
-  int kend = it->max;
-  double eps2 = it->eps * it->eps;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
@@ -1071,6 +1114,10 @@ sta2_pc (int m, const double *b, double *x,
 
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
+
+  int ret = -1;
+  int kend = it->max;
+  double eps2 = it->eps * it->eps;
 
   double *r0  = (double *)calloc (m, sizeof (double));
   double *w   = (double *)calloc (m, sizeof (double));
@@ -1123,9 +1170,13 @@ sta2_pc (int m, const double *b, double *x,
       res2 = cblas_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta2_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta2_pc(atlas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta2_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // Kr = K^{-1}.r
       inv (m, r, Kr, inv_param);
@@ -1234,9 +1285,13 @@ sta2_pc (int m, const double *b, double *x,
       res2 = ddot_ (&m, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta2_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta2_pc(blas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta2_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // Kr = K^{-1}.r
       inv (m, r, Kr, inv_param);
@@ -1345,9 +1400,13 @@ sta2_pc (int m, const double *b, double *x,
       res2 = my_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-sta2_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-sta2_pc(myblas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_sta2_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // Kr = K^{-1}.r
       inv (m, r, Kr, inv_param);
@@ -1431,7 +1490,6 @@ sta2_pc (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-end_sta2_pc:
   free (r0);
   free (w);
   free (q);
@@ -1445,14 +1503,17 @@ end_sta2_pc:
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-sta2_pc %d %e\n", iter, res2);
+      fprintf (it->out, "libiter-sta2_pc %d %e\n", iter, res2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }
 
 /* gpbi-cg method
+ * ref: Zhang, SIAM J.Sci.Comput. 1997 vol.18 pp.537-551.
+ * INPUT
  *   m : dimension of the problem
  *   b [m] : r-h-s vector
  *   atimes (int m, double *x, double *b) : calc matrix-vector product
@@ -1461,19 +1522,17 @@ end_sta2_pc:
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 gpb (int m, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
      void *atimes_param,
      struct iter *it)
 {
-  int kend = it->max;
-  double eps2 = it->eps * it->eps;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
@@ -1484,6 +1543,10 @@ gpb (int m, const double *b, double *x,
 
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
+
+  int ret = -1;
+  int kend = it->max;
+  double eps2 = it->eps * it->eps;
 
   double *r0  = (double *)calloc (m, sizeof (double));
   double *w   = (double *)calloc (m, sizeof (double));
@@ -1534,9 +1597,13 @@ gpb (int m, const double *b, double *x,
       res2 = cblas_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-gpb %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-gpb(atlas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_gpb;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - u)
       cblas_daxpy (m, -1.0, u, 1, p, 1); // p = p - u
@@ -1640,9 +1707,13 @@ gpb (int m, const double *b, double *x,
       res2 = ddot_ (&m, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-gpb %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-gpb(blas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_gpb;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - u)
       daxpy_ (&m, &d_m1, u, &i_1, p, &i_1); // p = p - u
@@ -1746,9 +1817,13 @@ gpb (int m, const double *b, double *x,
       res2 = my_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-gpb %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-gpb(myblas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_gpb;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // p = r + beta * (p - u)
       my_daxpy (m, -1.0, u, 1, p, 1); // p = p - u
@@ -1827,7 +1902,6 @@ gpb (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-end_gpb:
   free (r0);
   free (w);
   free (q);
@@ -1840,14 +1914,17 @@ end_gpb:
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-gpb %d %e\n", iter, res2);
+      fprintf (it->out, "libiter-gpb %d %e\n", iter, res2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }
 
 /* gpbi-cg method with precondition
+ * ref: Zhang, SIAM J.Sci.Comput. 1997 vol.18 pp.537-551.
+ * INPUT
  *   m : dimension of the problem
  *   b [m] : r-h-s vector
  *   atimes (int m, static double *x, double *b, void *param) :
@@ -1860,11 +1937,12 @@ end_gpb:
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 gpb_pc (int m, const double *b, double *x,
 	void (*atimes) (int, const double *, double *, void *),
 	void *atimes_param,
@@ -1872,9 +1950,6 @@ gpb_pc (int m, const double *b, double *x,
 	void *inv_param,
 	struct iter *it)
 {
-  int kend = it->max;
-  double eps2 = it->eps * it->eps;
-
 #ifndef HAVE_CBLAS_H
 # ifdef HAVE_BLAS_H
   /* use Fortran BLAS routines */
@@ -1885,6 +1960,10 @@ gpb_pc (int m, const double *b, double *x,
 
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
+
+  int ret = -1;
+  int kend = it->max;
+  double eps2 = it->eps * it->eps;
 
   double *r0  = (double *)calloc (m, sizeof (double));
   double *w   = (double *)calloc (m, sizeof (double));
@@ -1937,9 +2016,13 @@ gpb_pc (int m, const double *b, double *x,
       res2 = cblas_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-gpb_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-gpb_pc(atlas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_gpb_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // Kr = K^{-1}.r
       inv (m, r, Kr, inv_param);
@@ -2048,9 +2131,13 @@ gpb_pc (int m, const double *b, double *x,
       res2 = ddot_ (&m, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-gpb_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-gpb_pc(blas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_gpb_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // Kr = K^{-1}.r
       inv (m, r, Kr, inv_param);
@@ -2159,9 +2246,13 @@ gpb_pc (int m, const double *b, double *x,
       res2 = my_ddot (m, r, 1, r, 1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-gpb_pc %d %e\n", iter, res2 / b2);
+	  fprintf (it->out, "libiter-gpb_pc(myblas) %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_gpb_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       // Kr = K^{-1}.r
       inv (m, r, Kr, inv_param);
@@ -2245,7 +2336,6 @@ gpb_pc (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-end_gpb_pc:
   free (r0);
   free (w);
   free (q);
@@ -2259,9 +2349,10 @@ end_gpb_pc:
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-gpb_pc %d %e\n", iter, res2);
+      fprintf (it->out, "libiter-gpb_pc %d %e\n", iter, res2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }

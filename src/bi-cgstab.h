@@ -1,7 +1,7 @@
 /* header file of bi-cgstab.c --
  * wrapper for iterative solver routines
  * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bi-cgstab.h,v 2.7 2007/11/23 04:58:42 kichiki Exp $
+ * $Id: bi-cgstab.h,v 2.8 2007/11/25 18:42:45 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -42,11 +42,12 @@
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta (int m, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
      void *atimes_param,
@@ -66,11 +67,12 @@ sta (int m, const double *b, double *x,
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta_pc (int m, const double *b, double *x,
 	void (*atimes) (int, const double *, double *, void *),
 	void *atimes_param,
@@ -89,11 +91,12 @@ sta_pc (int m, const double *b, double *x,
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta2 (int m, const double *b, double *x,
       void (*atimes) (int, const double *, double *, void *),
       void *atimes_param,
@@ -113,11 +116,12 @@ sta2 (int m, const double *b, double *x,
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 sta2_pc (int m, const double *b, double *x,
 	 void (*atimes) (int, const double *, double *, void *),
 	 void *atimes_param,
@@ -126,6 +130,8 @@ sta2_pc (int m, const double *b, double *x,
 	 struct iter *it);
 
 /* gpbi-cg method
+ * ref: Zhang, SIAM J.Sci.Comput. 1997 vol.18 pp.537-551.
+ * INPUT
  *   m : dimension of the problem
  *   b [m] : r-h-s vector
  *   atimes (int m, double *x, double *b) : calc matrix-vector product
@@ -134,17 +140,20 @@ sta2_pc (int m, const double *b, double *x,
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 gpb (int m, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
      void *atimes_param,
      struct iter *it);
 
 /* gpbi-cg method with precondition
+ * ref: Zhang, SIAM J.Sci.Comput. 1997 vol.18 pp.537-551.
+ * INPUT
  *   m : dimension of the problem
  *   b [m] : r-h-s vector
  *   atimes (int m, static double *x, double *b, void *param) :
@@ -157,11 +166,12 @@ gpb (int m, const double *b, double *x,
  *        it->max = kend : max of iteration
  *        it->eps = eps : log10 of cutoff
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 gpb_pc (int m, const double *b, double *x,
 	void (*atimes) (int, const double *, double *, void *),
 	void *atimes_param,
