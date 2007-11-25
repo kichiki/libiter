@@ -1,6 +1,6 @@
 /* overall wrapper for iterative solver routines
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.c,v 1.7 2007/11/25 18:51:29 kichiki Exp $
+ * $Id: libiter.c,v 1.8 2007/11/25 19:07:25 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,6 +26,8 @@
 #include "cg.h"
 #include "cgs.h"
 #include "bicgstab.h"
+
+#include "cg_.h" // cg_pc()
 
 #include "gmres.h"
 #include "bi-cgstab.h"
