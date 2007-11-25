@@ -1,6 +1,6 @@
 /* BiCGSTAB - Weiss, Algorithm 12
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: bicgstab.c,v 2.4 2007/11/23 05:16:32 kichiki Exp $
+ * $Id: bicgstab.c,v 2.5 2007/11/25 18:43:11 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -82,11 +82,12 @@ dscal_(int* N,
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [n] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 bicgstab (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
 	  void *atimes_param,
@@ -103,7 +104,7 @@ bicgstab (int n, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-
+  int ret = -1;
   double eps2 = it->eps * it->eps;
   int itmax = it->max;
 
@@ -139,7 +140,7 @@ bicgstab (int n, const double *b, double *x,
   double b2 = cblas_ddot (n, b, 1, b, 1); // (b,b)
   eps2 *= b2;
 
-  atimes (n, x, r, atimes_param);       // r = A.x ...
+  atimes (n, x, r, atimes_param);    // r = A.x ...
   cblas_daxpy (n, -1.0, b, 1, r, 1); //         - b
 
   cblas_dcopy (n, r, 1, rs, 1); // r* = r
@@ -152,7 +153,6 @@ bicgstab (int n, const double *b, double *x,
     {
       atimes (n, p, ap, atimes_param); // ap = A.p
       rsap = cblas_ddot (n, rs, 1, ap, 1); // rsap = (r*, A.p)
-
       delta = - rho / rsap;
 
       cblas_dcopy (n, r, 1, s, 1);         // s = r ...
@@ -176,7 +176,11 @@ bicgstab (int n, const double *b, double *x,
 		   "libiter-bicgstab(cblas) %d %e\n",
 		   i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       rho1 = cblas_ddot (n, rs, 1, r, 1); // rho = (r*, r)
       beta = rho1 / rho * delta / gamma;
@@ -196,7 +200,7 @@ bicgstab (int n, const double *b, double *x,
   double b2 = ddot_ (&n, b, &i_1, b, &i_1); // (b,b)
   eps2 *= b2;
 
-  atimes (n, x, r, atimes_param);          // r = A.x ...
+  atimes (n, x, r, atimes_param);       // r = A.x ...
   daxpy_ (&n, &d_m1, b, &i_1, r, &i_1); //         - b
 
   dcopy_ (&n, r, &i_1, rs, &i_1); // r* = r
@@ -232,7 +236,16 @@ bicgstab (int n, const double *b, double *x,
 		   "libiter-bicgstab(blas) %d %e\n",
 		   i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
+      if (res2 > 1.0e20)
+	{
+	  // already too big residual
+	  break;
+	}
 
       rho1 = ddot_ (&n, rs, &i_1, r, &i_1); // rho = (r*, r)
       beta = rho1 / rho * delta / gamma;
@@ -287,7 +300,11 @@ bicgstab (int n, const double *b, double *x,
 		   "libiter-bicgstab(myblas) %d %e\n",
 		   i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       rho1 = my_ddot (n, rs, 1, r, 1); // rho = (r*, r)
       beta = rho1 / rho * delta / gamma;
@@ -310,9 +327,10 @@ bicgstab (int n, const double *b, double *x,
 
   if (it->debug == 1)
     {
-      fprintf (it->out, "libiter-bicgstab it= %d res^2= %e\n", i, res2 / b2);
+      fprintf (it->out, "libiter-bicgstab %d %e\n", i, res2 / b2);
     }
 
   it->niter = i;
   it->res2  = res2 / b2;
+  return (ret);
 }
