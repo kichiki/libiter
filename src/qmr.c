@@ -1,6 +1,6 @@
 /* QMR -- Weiss' Algorithm 10
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: qmr.c,v 2.2 2007/11/23 05:07:56 kichiki Exp $
+ * $Id: qmr.c,v 2.3 2007/11/25 18:45:25 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,17 +59,19 @@ dscal_(int* N,
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x[n] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 qmr (int n, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
      void (*atimes_t) (int, const double *, double *, void *),
      void *atimes_param,
      struct iter *it)
 {
+  int ret = -1;
   int itmax = it->max;
   double eps2 = it->eps * it->eps;
 
@@ -85,14 +87,14 @@ qmr (int n, const double *b, double *x,
   double *ps   = (double *)malloc (sizeof (double) * n);
   double *atps = (double *)malloc (sizeof (double) * n);
   double *ap   = (double *)malloc (sizeof (double) * n);
-  CHECK_MALLOC (xt,   "bico");
-  CHECK_MALLOC (r,    "bico");
-  CHECK_MALLOC (rt,   "bico");
-  CHECK_MALLOC (rs,   "bico");
-  CHECK_MALLOC (p,    "bico");
-  CHECK_MALLOC (ps,   "bico");
-  CHECK_MALLOC (atps, "bico");
-  CHECK_MALLOC (ap,   "bico");
+  CHECK_MALLOC (xt,   "qmr");
+  CHECK_MALLOC (r,    "qmr");
+  CHECK_MALLOC (rt,   "qmr");
+  CHECK_MALLOC (rs,   "qmr");
+  CHECK_MALLOC (p,    "qmr");
+  CHECK_MALLOC (ps,   "qmr");
+  CHECK_MALLOC (atps, "qmr");
+  CHECK_MALLOC (ap,   "qmr");
 
   double b2 = ddot_ (&n, b, &i_1, b, &i_1);
   eps2 *= b2;
@@ -117,9 +119,13 @@ qmr (int n, const double *b, double *x,
       res2 = ddot_ (&n, r, &i_1, r, &i_1);
       if (it->debug == 2)
 	{
-	  fprintf (stdout, "libiter-qmr %d %e\n", i, res2 / b2);
+	  fprintf (it->out, "libiter-qmr %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       atimes_t (n, ps, atps, atimes_param); // atps = At.p*
       double patps = ddot_ (&n, p, &i_1, atps, &i_1); // patps = (p, At.p*)
@@ -165,9 +171,10 @@ qmr (int n, const double *b, double *x,
 
   if (it->debug == 1)
     {
-      fprintf (stdout, "libiter-qmr %d %e\n", i, res2 / b2);
+      fprintf (it->out, "libiter-qmr %d %e\n", i, res2 / b2);
     }
 
   it->niter = i;
   it->res2  = res2 / b2;
+  return (ret);
 }
