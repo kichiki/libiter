@@ -1,7 +1,7 @@
 /* header file of mygmres.c --
  * generalized minimum residual method
  * Copyright (C) 1998-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.h,v 2.8 2007/11/22 05:51:12 kichiki Exp $
+ * $Id: gmres.h,v 2.9 2007/11/25 18:41:57 kichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -24,31 +24,79 @@
 #ifndef	_GMRES_H_
 #define	_GMRES_H_
 
-void
+
+/* GMRES(m)
+ * INPUT
+ *   n : dimension of the problem
+ *   b[n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. the following entries are used.
+ *        it->max     : max of iteration
+ *        it->restart : number of iteration at once
+ *        it->eps     : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x[m] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
+ */
+int
 gmres_m (int n, const double *f, double *x,
 	 void (*atimes) (int, const double *, double *, void *),
 	 void *atimes_param,
-	 struct iter *it_param);
+	 struct iter *it);
 
-void
-gmres_m_ (int n, const double *f, double *x,
-	  void (*atimes) (int, const double *, double *, void *),
-	  void *atimes_param,
-	  struct iter *it_param);
-
-void
+/* GMRES(m) with preconditioning
+ * INPUT
+ *   n : dimension of the problem
+ *   b[n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int n, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : struct iter. the following entries are used.
+ *        it->max     : max of iteration
+ *        it->restart : number of iteration at once
+ *        it->eps     : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x[n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
+ */
+int
 gmres_m_pc (int n, const double *f, double *x,
 	    void (*atimes) (int, const double *, double *, void *),
 	    void *atimes_param,
 	    void (*inv) (int, const double *, double *, void *),
 	    void *inv_param,
-	    struct iter *it_param);
+	    struct iter *it);
 
-void
+/* plain GMRES (not restart version)
+ * INPUT
+ *   m : dimension of the problem
+ *   b[m] : r-h-s vector
+ *   atimes (int m, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max : max of iteration
+ *        it->eps : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x[m] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
+ */
+int
 gmres (int n, const double *f, double *x,
        void (*atimes) (int, const double *, double *, void *),
        void *atimes_param,
-       struct iter *it_param);
+       struct iter *it);
 
 
 #endif /* !_GMRES_H_ */
