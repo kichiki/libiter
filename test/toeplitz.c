@@ -1,6 +1,6 @@
 /* Toeplitz matrix related code to check libiter solvers
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: toeplitz.c,v 1.1 2007/11/23 04:42:17 kichiki Exp $
+ * $Id: toeplitz.c,v 1.2 2007/11/25 19:11:23 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -175,8 +175,7 @@ Toeplitz_check_all (int n, double gamma,
   // Steepest
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "steepest", it_max, it_restart, it_eps,
@@ -184,37 +183,57 @@ Toeplitz_check_all (int n, double gamma,
   // CG
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cg", it_max, it_restart, it_eps,
 		    verbose, tiny);
+  // CG, another implementation
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    Toeplitz_atimes, NULL, (void *) &gamma,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "cg_", it_max, it_restart, it_eps,
+		    verbose, tiny);
   // CGS
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cgs", it_max, it_restart, it_eps,
 		    verbose, tiny);
   */
 
+  /* Bi-CGSTAB may failed in high tolerance -- 
+   * first converging up to a certain point,
+   * then start diverging,
+   * and after that, start converging again,
+   * but the converged value has enormous errors
+   * although the residual looks small....
+
+  // Bi-CGSTAB (in Weiss)
+  check +=
+    check_iter_gen (n, b, b, // initial guess
+		    Toeplitz_atimes, NULL, (void *) &gamma,
+		    NULL, NULL, // for preconditioner
+		    x, // exact solution
+		    "bicgstab", it_max, it_restart, it_eps,
+		    verbose, tiny);
   // Bi-CGSTAB
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "sta", it_max, it_restart, it_eps,
 		    verbose, tiny);
+  */
   // Bi-CGSTAB2
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "sta2", it_max, it_restart, it_eps,
@@ -223,8 +242,7 @@ Toeplitz_check_all (int n, double gamma,
   // GPBi-CG
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "gpb", it_max, it_restart, it_eps,
@@ -233,8 +251,7 @@ Toeplitz_check_all (int n, double gamma,
   // ORTHOMIN
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "otmk", it_max, it_restart, it_eps,
@@ -243,8 +260,7 @@ Toeplitz_check_all (int n, double gamma,
   // GMRES
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, NULL,
-		    (void *) &gamma,
+		    Toeplitz_atimes, NULL, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "gmres", it_max, it_restart, it_eps,
@@ -256,8 +272,7 @@ Toeplitz_check_all (int n, double gamma,
   // ATPRES
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, Toeplitz_atimes_t,
-		    (void *) &gamma,
+		    Toeplitz_atimes, Toeplitz_atimes_t, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "atpres", it_max, it_restart, it_eps,
@@ -265,8 +280,7 @@ Toeplitz_check_all (int n, double gamma,
   // CGNE
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, Toeplitz_atimes_t,
-		    (void *) &gamma,
+		    Toeplitz_atimes, Toeplitz_atimes_t, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "cgne", it_max, it_restart, it_eps,
@@ -276,8 +290,7 @@ Toeplitz_check_all (int n, double gamma,
   // BICG
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, Toeplitz_atimes_t,
-		    (void *) &gamma,
+		    Toeplitz_atimes, Toeplitz_atimes_t, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "bicg", it_max, it_restart, it_eps,
@@ -285,8 +298,7 @@ Toeplitz_check_all (int n, double gamma,
   // BICO
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, Toeplitz_atimes_t,
-		    (void *) &gamma,
+		    Toeplitz_atimes, Toeplitz_atimes_t, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "bico", it_max, it_restart, it_eps,
@@ -294,8 +306,7 @@ Toeplitz_check_all (int n, double gamma,
   // QMR
   check +=
     check_iter_gen (n, b, b, // initial guess
-		    Toeplitz_atimes, Toeplitz_atimes_t,
-		    (void *) &gamma,
+		    Toeplitz_atimes, Toeplitz_atimes_t, (void *) &gamma,
 		    NULL, NULL, // for preconditioner
 		    x, // exact solution
 		    "QMR", it_max, it_restart, it_eps,
