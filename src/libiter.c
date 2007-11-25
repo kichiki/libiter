@@ -1,6 +1,6 @@
 /* overall wrapper for iterative solver routines
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.c,v 1.6 2007/11/23 04:56:55 kichiki Exp $
+ * $Id: libiter.c,v 1.7 2007/11/25 18:51:29 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -111,40 +111,42 @@ iter_free (struct iter *param)
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
- *   atimes (n, x, b, user_data) : routine to calc A.x and return b[]
- *   user_data : pointer to be passed to solver and atimes routines
- *   it_param : parameters for iterative solvers
- *              solver : string indicating the solver
- *                "steepest" : steepest descent method
- *                "cg"       : conjugate gradient
- *                "cgs"      : conjugate gradient squared
- *                "bicgstab" : bi-conjugate gradient stabilized
- *                "sta", "sta2", "gpb", "otmk" :
- *                "gmres"    : generalized minimum residual method  (default)
- *              max, restart, eps
- *              n, guess[n] : the result at the last process
- *              flag_guess : 0 == don't keep the results,
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : parameters for iterative solvers
+ *        solver : string indicating the solver
+ *          "steepest" : steepest descent method
+ *          "cg"       : conjugate gradient
+ *          "cgs"      : conjugate gradient squared
+ *          "bicgstab" : bi-conjugate gradient stabilized
+ *          "sta", "sta2", "gpb", "otmk" :
+ *          "gmres"    : generalized minimum residual method  (default)
+ *        max, restart, eps
+ *        n, guess[n] : the result at the last process
+ *        flag_guess : 0 == don't keep the results,
  *                           1 == keep the results for the next.
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [n] : solution
  */
-void
+int
 solve_iter (int n, const double *b,
 	    double *x,
 	    void (*atimes) (int, const double *, double *, void *),
 	    void *atimes_param,
-	    struct iter *it_param)
+	    struct iter *it)
 {
   int i;
-  if (it_param->n != n)
+  if (it->n != n)
     {
       fprintf (stderr, "libiter solve_iter : n is different %d != %d\n",
-	       it_param->n, n);
+	       it->n, n);
       exit (1);
     }
 
   // set the initial guess
-  if (it_param->flag_guess == 0)
+  if (it->flag_guess == 0)
     {
       for (i = 0; i < n; ++i)
 	{
@@ -155,73 +157,217 @@ solve_iter (int n, const double *b,
     {
       for (i = 0; i < n; ++i)
 	{
-	  x[i] = it_param->guess[i];
+	  x[i] = it->guess[i];
 	}
     }
 
-
-  if (strcmp (it_param->solver, "steepest") == 0)
+  int ret = -1;
+  if (strcmp (it->solver, "steepest") == 0)
     {
-      steepest
-	(n, b, x,
-	 atimes, atimes_param,
-	 it_param);
+      ret = steepest (n, b, x,
+		      atimes, atimes_param,
+		      it);
     }
-  else if (strcmp (it_param->solver, "cg") == 0)
+  else if (strcmp (it->solver, "cg") == 0)
     {
-      cg (n, b, x,
-	  atimes, atimes_param,
-	  it_param);
-    }
-  else if (strcmp (it_param->solver, "cgs") == 0)
-    {
-      cgs (n, b, x,
-	   atimes, atimes_param,
-	   it_param);
-    }
-  else if (strcmp (it_param->solver, "bicgstab") == 0)
-    {
-      bicgstab (n, b, x,
+      ret = cg (n, b, x,
 		atimes, atimes_param,
-		it_param);
+		it);
     }
-  else if (strcmp (it_param->solver, "sta") == 0)
+  else if (strcmp (it->solver, "cgs") == 0)
     {
-      sta (n, b, x,
-	   atimes, atimes_param,
-	   it_param);
+      ret = cgs (n, b, x,
+		 atimes, atimes_param,
+		 it);
     }
-  else if (strcmp (it_param->solver, "sta2") == 0)
+  else if (strcmp (it->solver, "bicgstab") == 0)
     {
-      sta2 (n, b, x,
-	    atimes, atimes_param,
-	    it_param);
+      ret = bicgstab (n, b, x,
+		      atimes, atimes_param,
+		      it);
     }
-  else if (strcmp (it_param->solver, "gpb") == 0)
+  else if (strcmp (it->solver, "sta") == 0)
     {
-      gpb (n, b, x,
-	   atimes, atimes_param,
-	   it_param);
+      ret = sta (n, b, x,
+		 atimes, atimes_param,
+		 it);
     }
-  else if (strcmp (it_param->solver, "otmk") == 0)
+  else if (strcmp (it->solver, "sta2") == 0)
     {
-      otmk (n, b, x,
-	    atimes, atimes_param,
-	    it_param);
+      ret = sta2 (n, b, x,
+		  atimes, atimes_param,
+		  it);
     }
-  else //if (strcmp (it_param->solver, "gmres") == 0)
+  else if (strcmp (it->solver, "gpb") == 0)
     {
-      gmres_m (n, b, x,
-	       atimes, atimes_param,
-	       it_param);
+      ret = gpb (n, b, x,
+		 atimes, atimes_param,
+		 it);
+    }
+  else if (strcmp (it->solver, "otmk") == 0)
+    {
+      ret = otmk (n, b, x,
+		  atimes, atimes_param,
+		  it);
+    }
+  else if (strcmp (it->solver, "gmres") == 0)
+    {
+      ret = gmres_m (n, b, x,
+		     atimes, atimes_param,
+		     it);
+    }
+  else
+    {
+      fprintf (stderr, "libiter-solve_iter : "
+	       "invalid solver %s.\n", it->solver);
     }
 
   /* keep the results for the next first guess */
-  if (it_param->flag_guess != 0)
+  if (it->flag_guess != 0)
     {
       for (i = 0; i < n; ++i)
 	{
-	  it_param->guess[i] = x[i];
+	  it->guess[i] = x[i];
 	}
     }
+  return (ret);
+}
+
+
+/* wrapper routine for iterative solvers with preconditioner
+ * INPUT
+ *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
+ *   b [n] : given vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int n, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : parameters for iterative solvers
+ *        solver : string indicating the solver
+ *          "steepest" : steepest descent method
+ *          "cg"       : conjugate gradient
+ *          "cgs"      : conjugate gradient squared
+ *          "bicgstab" : bi-conjugate gradient stabilized
+ *          "sta", "sta2", "gpb", "otmk" :
+ *          "gmres"    : generalized minimum residual method  (default)
+ *        max, restart, eps
+ *        n, guess[n] : the result at the last process
+ *        flag_guess : 0 == don't keep the results,
+ *                           1 == keep the results for the next.
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x [n] : solution
+ */
+int
+solve_iter_pc (int n, const double *b,
+	       double *x,
+	       void (*atimes) (int, const double *, double *, void *),
+	       void *atimes_param,
+	       void (*inv) (int, const double *, double *, void *),
+	       void *inv_param,
+	       struct iter *it)
+{
+  int i;
+  if (it->n != n)
+    {
+      fprintf (stderr, "libiter solve_iter_pc : n is different %d != %d\n",
+	       it->n, n);
+      exit (1);
+    }
+  if (inv == NULL)
+    {
+      // no preconditioning
+      return (solve_iter (n, b, x, atimes, atimes_param, it));
+    }
+
+  // set the initial guess
+  if (it->flag_guess == 0)
+    {
+      for (i = 0; i < n; ++i)
+	{
+	  x[i] = 0.0;
+	}
+    }
+  else
+    {
+      for (i = 0; i < n; ++i)
+	{
+	  x[i] = it->guess[i];
+	}
+    }
+
+  int ret = -1;
+  if (strcmp (it->solver, "steepest") == 0)
+    {
+      fprintf (stderr, "libiter-solve_iter_pc : "
+	       "preconditioned steepest is not implemented.\n");
+    }
+  else if (strcmp (it->solver, "cg") == 0)
+    {
+      ret = cg_pc (n, b, x,
+		   atimes, atimes_param,
+		   inv, inv_param,
+		   it);
+    }
+  else if (strcmp (it->solver, "cgs") == 0)
+    {
+      fprintf (stderr, "libiter-solve_iter_pc : "
+	       "preconditioned cgs is not implemented.\n");
+    }
+  else if (strcmp (it->solver, "bicgstab") == 0)
+    {
+      fprintf (stderr, "libiter-solve_iter_pc : "
+	       "preconditioned bicgstab is not implemented.\n");
+    }
+  else if (strcmp (it->solver, "sta") == 0)
+    {
+      ret = sta_pc (n, b, x,
+		    atimes, atimes_param,
+		    inv, inv_param,
+		    it);
+    }
+  else if (strcmp (it->solver, "sta2") == 0)
+    {
+      ret = sta2_pc (n, b, x,
+		     atimes, atimes_param,
+		     inv, inv_param,
+		     it);
+    }
+  else if (strcmp (it->solver, "gpb") == 0)
+    {
+      ret = gpb_pc (n, b, x,
+		    atimes, atimes_param,
+		    inv, inv_param,
+		    it);
+    }
+  else if (strcmp (it->solver, "otmk") == 0)
+    {
+      ret = otmk_pc (n, b, x,
+		     atimes, atimes_param,
+		     inv, inv_param,
+		     it);
+    }
+  else if (strcmp (it->solver, "gmres") == 0)
+    {
+      ret = gmres_m (n, b, x,
+		     atimes, atimes_param,
+		     it);
+    }
+  else
+    {
+      fprintf (stderr, "libiter-solve_iter_pc : "
+	       "invalid solver %s.\n", it->solver);
+    }
+
+  /* keep the results for the next first guess */
+  if (it->flag_guess != 0)
+    {
+      for (i = 0; i < n; ++i)
+	{
+	  it->guess[i] = x[i];
+	}
+    }
+  return (ret);
 }

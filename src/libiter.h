@@ -1,6 +1,6 @@
 /* header file for library 'iter' -- gmres.c, bi-cgstab.c, and orthomin.c.
  * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: libiter.h,v 2.11 2007/11/23 04:57:22 kichiki Exp $
+ * $Id: libiter.h,v 2.12 2007/11/25 18:51:50 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -84,29 +84,66 @@ iter_free (struct iter *param);
  * INPUT
  *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
  *   b [n] : given vector
- *   atimes (n, x, b, user_data) : routine to calc A.x and return b[]
- *   user_data : pointer to be passed to solver and atimes routines
- *   it_param : parameters for iterative solvers
- *              solver : string indicating the solver
- *                "steepest" : steepest descent method
- *                "cg"       : conjugate gradient
- *                "cgs"      : conjugate gradient squared
- *                "bicgstab" : bi-conjugate gradient stabilized
- *                "sta", "sta2", "gpb", "otmk" :
- *                "gmres"    : generalized minimum residual method  (default)
- *              max, restart, eps
- *              n, guess[n] : the result at the last process
- *              flag_guess : 0 == don't keep the results,
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : parameters for iterative solvers
+ *        solver : string indicating the solver
+ *          "steepest" : steepest descent method
+ *          "cg"       : conjugate gradient
+ *          "cgs"      : conjugate gradient squared
+ *          "bicgstab" : bi-conjugate gradient stabilized
+ *          "sta", "sta2", "gpb", "otmk" :
+ *          "gmres"    : generalized minimum residual method  (default)
+ *        max, restart, eps
+ *        n, guess[n] : the result at the last process
+ *        flag_guess : 0 == don't keep the results,
  *                           1 == keep the results for the next.
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [n] : solution
  */
-void
+int
 solve_iter (int n, const double *b,
 	    double *x,
 	    void (*atimes) (int, const double *, double *, void *),
 	    void *atimes_param,
-	    struct iter *it_param);
+	    struct iter *it);
+
+/* wrapper routine for iterative solvers with preconditioner
+ * INPUT
+ *   n : size of vectors v[] and f[] -- expected to be np * nelm for red-sym
+ *   b [n] : given vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   inv (int n, static double *b, double *x, void *param) :
+ *        approx of A^{-1}.b = x for preconditioning.
+ *   inv_param : parameters for the preconditioner inv().
+ *   it : parameters for iterative solvers
+ *        solver : string indicating the solver
+ *          "steepest" : steepest descent method
+ *          "cg"       : conjugate gradient
+ *          "cgs"      : conjugate gradient squared
+ *          "bicgstab" : bi-conjugate gradient stabilized
+ *          "sta", "sta2", "gpb", "otmk" :
+ *          "gmres"    : generalized minimum residual method  (default)
+ *        max, restart, eps
+ *        n, guess[n] : the result at the last process
+ *        flag_guess : 0 == don't keep the results,
+ *                           1 == keep the results for the next.
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x [n] : solution
+ */
+int
+solve_iter_pc (int n, const double *b,
+	       double *x,
+	       void (*atimes) (int, const double *, double *, void *),
+	       void *atimes_param,
+	       void (*inv) (int, const double *, double *, void *),
+	       void *inv_param,
+	       struct iter *it);
 
 
 #endif /* !_LIBITER_H_ */
