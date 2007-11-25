@@ -1,6 +1,6 @@
 /* CGNE -- Weiss, Algorithm 6
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgne.c,v 1.5 2007/11/23 05:01:38 kichiki Exp $
+ * $Id: cgne.c,v 1.6 2007/11/25 18:49:43 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,11 +38,12 @@
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x[n] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 cgne (int n, const double *b, double *x,
       void (*atimes) (int, const double *, double *, void *),
       void (*atimes_t) (int, const double *, double *, void *),
@@ -136,6 +137,9 @@ cgne (int n, const double *b, double *x,
 
   my_dcopy (n, xx, 1, x, 1);
 
+  int ret = -1;
+  if (res <= eps * b_norm) ret = 0; // success
+
   free (alpha);
   free (r);
   free (xx);
@@ -144,4 +148,5 @@ cgne (int n, const double *b, double *x,
 
   it->niter = iter;
   it->res2  = res * res / (b_norm * b_norm);
+  return (ret);
 }

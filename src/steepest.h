@@ -1,6 +1,6 @@
 /* Steepest Descent -- Weiss' Algorithm 1
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: steepest.h,v 2.3 2007/11/23 05:03:03 kichiki Exp $
+ * $Id: steepest.h,v 2.4 2007/11/25 18:53:07 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,9 +22,21 @@
 
 /* Steepest Descent -- Weiss' Algorithm 1
  * INPUT
- *  it_param : eps, max, debug, out are used.
+ *   n : dimension of the problem
+ *   b [n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x [n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 steepest (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
 	  void *atimes_param,

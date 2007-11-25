@@ -1,6 +1,6 @@
 /* CGS -- Weiss, Algorithm 11
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cgs.c,v 2.4 2007/11/23 05:04:50 kichiki Exp $
+ * $Id: cgs.c,v 2.5 2007/11/25 18:49:02 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -74,11 +74,12 @@ dscal_(int* N,
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [n] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 cgs (int n, const double *b, double *x,
      void (*atimes) (int, const double *, double *, void *),
      void *atimes_param,
@@ -95,6 +96,7 @@ cgs (int n, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
+  int ret = -1;
   double eps2 = it->eps * it->eps;
   int itmax = it->max;
 
@@ -160,7 +162,11 @@ cgs (int n, const double *b, double *x,
 	{
 	  fprintf (it->out, "libiter-cgs %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       rho1 = cblas_ddot (n, r0, 1, r, 1); // rho = (r0*, r)
       beta = rho1 / rho;
@@ -218,7 +224,11 @@ cgs (int n, const double *b, double *x,
 	{
 	  fprintf (it->out, "libiter-cgs %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       rho1 = ddot_ (&n, r0, &i_1, r, &i_1); // rho = (r0*, r)
       beta = rho1 / rho;
@@ -275,7 +285,11 @@ cgs (int n, const double *b, double *x,
 	{
 	  fprintf (it->out, "libiter-cgs %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       rho1 = my_ddot (n, r0, 1, r, 1); // rho = (r0*, r)
       beta = rho1 / rho;
@@ -311,4 +325,5 @@ cgs (int n, const double *b, double *x,
 
   it->niter = i;
   it->res2  = res2 / b2;
+  return (ret);
 }

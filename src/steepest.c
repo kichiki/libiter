@@ -1,6 +1,6 @@
 /* Steepest Descent -- Weiss' Algorithm 1
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: steepest.c,v 2.3 2007/11/23 05:02:44 kichiki Exp $
+ * $Id: steepest.c,v 2.4 2007/11/25 18:52:48 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -63,8 +63,8 @@ dscal_(int* N,
 #endif // !HAVE_CBLAS_H
 
 
-
 /* Steepest Descent -- Weiss' Algorithm 1
+ * INPUT
  *   n : dimension of the problem
  *   b [n] : r-h-s vector
  *   atimes (int n, static double *x, double *b, void *param) :
@@ -74,11 +74,12 @@ dscal_(int* N,
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x [n] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 steepest (int n, const double *b, double *x,
 	  void (*atimes) (int, const double *, double *, void *),
 	  void *atimes_param,
@@ -94,6 +95,7 @@ steepest (int n, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
+  int ret = -1;
   double eps2 = it_param->eps * it_param->eps;
   int itmax = it_param->max;
 
@@ -123,7 +125,11 @@ steepest (int n, const double *b, double *x,
 	{
 	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
       
       atimes (n, r, ar, atimes_param); // ar = A.r
       double rar = cblas_ddot (n, r, 1, ar, 1); // rar = (r, A.r)
@@ -155,7 +161,11 @@ steepest (int n, const double *b, double *x,
 	{
 	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
       
       atimes (n, r, ar, atimes_param); // ar = A.r
       double rar = ddot_ (&n, r, &i_1, ar, &i_1); // rar = (r, A.r)
@@ -186,7 +196,11 @@ steepest (int n, const double *b, double *x,
 	{
 	  fprintf (it_param->out, "libiter-steepest %d %e\n", i, res2 / b2);
 	}
-      if (res2 <= eps2) break;
+      if (res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
       
       atimes (n, r, ar, atimes_param); // ar = A.r
       double rar = my_ddot (n, r, 1, ar, 1); // rar = (r, A.r)
@@ -212,4 +226,5 @@ steepest (int n, const double *b, double *x,
 
   it_param->niter = i;
   it_param->res2  = res2 / b2;
+  return (ret);
 }

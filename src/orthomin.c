@@ -1,6 +1,6 @@
 /* orthomin scheme
  * Copyright (C) 1999-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: orthomin.c,v 2.8 2007/11/23 04:59:12 kichiki Exp $
+ * $Id: orthomin.c,v 2.9 2007/11/25 18:50:40 kichiki Exp $
  *
  * solver routines are translated into C by K.I. from fortran code
  * originally written by martin h. gutknecht
@@ -83,11 +83,12 @@ dscal_(int* N,
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x[m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 otmk (int m, const double *b, double *x,
       void (*atimes) (int, const double *, double *, void *),
       void *atimes_param,
@@ -103,6 +104,7 @@ otmk (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
+  int ret = -1;
   int kend = it->max;
   int kres = it->restart;
   double eps2 = it->eps * it->eps;
@@ -154,7 +156,11 @@ otmk (int m, const double *b, double *x,
 	{
 	  fprintf (it->out, "otmk %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_otmk;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       int k1 = iter % (kres + 1);
       double rap = cblas_ddot (m, r, 1, ap + k1 * m, 1); // (r, ap(k1))
@@ -218,7 +224,11 @@ otmk (int m, const double *b, double *x,
 	{
 	  fprintf (it->out, "otmk %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_otmk;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       int k1 = iter % (kres + 1);
       double rap = ddot_ (&m, r, &i_1, ap + k1 * m, &i_1); // (r, ap(k1))
@@ -282,7 +292,11 @@ otmk (int m, const double *b, double *x,
 	{
 	  fprintf (it->out, "otmk %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_otmk;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       int k1 = iter % (kres + 1);
       double rap = my_ddot (m, r, 1, ap + k1 * m, 1); // (r, ap(k1))
@@ -322,7 +336,6 @@ otmk (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-end_otmk:
   free (r);
   free (p);
   free (ap);
@@ -331,11 +344,12 @@ end_otmk:
 
   if (it->debug == 1)
     {
-      fprintf (it->out, "otmk_ %d %e\n", iter, res2 / b2);
+      fprintf (it->out, "otmk %d %e\n", iter, res2 / b2);
     }
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }
 
 /* orthomin(k) method with preconditioning
@@ -352,11 +366,12 @@ end_otmk:
  *        it->max = kend : max of iteration
  *        it->eps = eps  : criteria for |r^2|/|b^2|
  * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
  *   x[m] : solution
  *   it->niter : # of iteration
  *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 otmk_pc (int m, const double *b, double *x,
 	 void (*atimes) (int, const double *, double *, void *),
 	 void *atimes_param,
@@ -374,6 +389,7 @@ otmk_pc (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
+  int ret = -1;
   int kend = it->max;
   int kres = it->restart;
   double eps2 = it->eps * it->eps;
@@ -426,7 +442,11 @@ otmk_pc (int m, const double *b, double *x,
 	{
 	  fprintf (it->out, "otmk_pc %d %e\n", iter, res2 /b2);
 	}
-      if(res2 <= eps2) goto end_otmk_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       int k1 = iter % (kres + 1);
       double rap = cblas_ddot (m, r, 1, ap + k1 * m, 1); // (r, ap(k1))
@@ -491,7 +511,11 @@ otmk_pc (int m, const double *b, double *x,
 	{
 	  fprintf (it->out, "otmk_pc %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_otmk_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       int k1 = iter % (kres + 1);
       double rap = ddot_ (&m, r, &i_1, ap + k1 * m, &i_1); // (r, ap(k1))
@@ -556,7 +580,11 @@ otmk_pc (int m, const double *b, double *x,
 	{
 	  fprintf (it->out, "otmk_pc %d %e\n", iter, res2 / b2);
 	}
-      if(res2 <= eps2) goto end_otmk_pc;
+      if(res2 <= eps2)
+	{
+	  ret = 0; // success
+	  break;
+	}
 
       int k1 = iter % (kres + 1);
       double rap = my_ddot (m, r, 1, ap + k1 * m, 1); // (r, ap(k1))
@@ -597,7 +625,6 @@ otmk_pc (int m, const double *b, double *x,
 # endif // !HAVE_BLAS_H
 #endif // !HAVE_CBLAS_H
 
-end_otmk_pc:
   free (r);
   free (p);
   free (ap);
@@ -611,4 +638,5 @@ end_otmk_pc:
 
   it->niter = iter;
   it->res2  = res2 / b2;
+  return (ret);
 }

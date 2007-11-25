@@ -2,7 +2,7 @@
  * Classical CG method -- Weiss' Algorithm 2
  * my implementation of Classical CG method
  * Copyright (C) 2006-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cg.h,v 2.3 2007/11/23 05:04:22 kichiki Exp $
+ * $Id: cg.h,v 2.4 2007/11/25 18:48:42 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,13 +24,25 @@
 
 /* Classical CG method -- Weiss' Algorithm 2
  * INPUT
- *  it_param : eps, max, debug, out are used.
+ *   n : dimension of the problem
+ *   b [n] : r-h-s vector
+ *   atimes (int n, static double *x, double *b, void *param) :
+ *        calc matrix-vector product A.x = b.
+ *   atimes_param : parameters for atimes().
+ *   it : struct iter. following entries are used
+ *        it->max = kend : max of iteration
+ *        it->eps = eps  : criteria for |r^2|/|b^2|
+ * OUTPUT
+ *   returned value : 0 == success, otherwise (-1) == failed
+ *   x [n] : solution
+ *   it->niter : # of iteration
+ *   it->res2  : |r^2| / |b^2|
  */
-void
+int
 cg (int n, const double *b, double *x,
     void (*atimes) (int, const double *, double *, void *),
     void *atimes_param,
-    struct iter *it_param);
+    struct iter *it);
 
 
 #endif /* !_CG_H_ */
