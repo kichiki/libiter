@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.1 2007/11/23 04:48:52 kichiki Exp $
+# $Id: Makefile,v 1.2 2007/12/01 18:13:05 kichiki Exp $
 
 CC           = cc
 #LD           = libtool --mode=link $(CC)
@@ -49,6 +49,13 @@ OBJ =	test-libiter.o\
 	check-iter-gen.o\
 	toeplitz.o\
 	dgetri_c.o\
+	check-cg-pc.o\
+	check-gmres-m-pc.o\
+	check-gpb-pc.o\
+	check-otmk-pc.o\
+	check-sta-pc.o\
+	check-sta2-pc.o\
+	ilu.o\
 	bench.o
 
 
