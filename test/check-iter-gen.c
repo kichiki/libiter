@@ -1,6 +1,6 @@
 /* test code for iterative schemes in general
  * Copyright (C) 2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: check-iter-gen.c,v 1.2 2007/11/25 19:10:20 kichiki Exp $
+ * $Id: check-iter-gen.c,v 1.3 2007/12/01 18:11:53 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -111,6 +111,7 @@ check_iter_gen (int n, const double *b, const double *x0,
     }
 
   int check = 0;
+  double max = 0.0;
 
 
   // set struct iter
@@ -270,7 +271,7 @@ check_iter_gen (int n, const double *b, const double *x0,
     {
       if (verbose != 0)
 	{
-	  fprintf (stdout, "couldn't converge : res = %e, eps = %e\n",
+	  fprintf (stdout, " couldn't converge : res = %e, eps = %e\n",
 		   res, eps);
 	}
       check ++;
@@ -279,14 +280,14 @@ check_iter_gen (int n, const double *b, const double *x0,
     {
       if (verbose != 0)
 	{
-	  fprintf (stdout, "converged : res = %e, eps = %e\n",
+	  fprintf (stdout, " converged : res = %e, eps = %e\n",
 		   res, eps);
 	}
       char label[80];
       for (i = 0; i < n; i ++)
 	{
 	  sprintf (label, "x[%d]", i);
-	  check += compare (x1[i], x[i], label, verbose, tiny);
+	  check += compare_max (x1[i], x[i], label, verbose, tiny, &max);
 	}
     }
 
@@ -294,13 +295,13 @@ check_iter_gen (int n, const double *b, const double *x0,
 
   if (verbose != 0)
     {
-      fprintf (stdout, "niter : %d\n", it->niter);
-      fprintf (stdout, "(|r^2| / |b^2|)^{1/2} = %e\n", res);
-      fprintf (stdout, "CPU time : %f\n\n", t1 - t0);
-      if (check == 0)
-	fprintf (stdout, " => PASSED\n\n");
-      else
-	fprintf (stdout, " => FAILED\n\n");
+      fprintf (stdout, " niter : %d\n", it->niter);
+      fprintf (stdout, " (|r^2| / |b^2|)^{1/2} = %e\n", res);
+      fprintf (stdout, " CPU time : %f\n", t1 - t0);
+
+      fprintf (stdout, " max error = %e vs tiny = %e\n", max, tiny);
+      if (check == 0) fprintf (stdout, " => PASSED\n\n");
+      else            fprintf (stdout, " => FAILED\n\n");
     }
 
   return (check);
