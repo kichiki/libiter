@@ -1,6 +1,6 @@
 /* CG method
  * Copyright (C) 2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: cg_.c,v 1.1 2007/11/25 18:46:16 kichiki Exp $
+ * $Id: cg_.c,v 1.2 2007/12/01 18:20:20 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -414,7 +414,7 @@ cg_pc (int n, const double *b, double *x,
       inv (n, r, Pr, inv_param);
       dcopy_ (&n, Pr, &i_1, p, &i_1); // p = K^{-1}.r
 
-      double Prr = ddot (&n, Pr, &i_1, r, &i_1); // Prr = (Pr, r)
+      double Prr = ddot_ (&n, Pr, &i_1, r, &i_1); // Prr = (Pr, r)
 
       for (i = 0; i < it->max; i ++)
 	{
