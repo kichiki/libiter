@@ -1,6 +1,6 @@
 /* generalized minimum residual method
  * Copyright (C) 1998-2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: gmres.c,v 2.13 2007/11/25 18:41:36 kichiki Exp $
+ * $Id: gmres.c,v 2.14 2007/12/08 20:37:17 kichiki Exp $
  *
  * Reference :
  *   GMRES(m) : Y.Saad & M.H.Schultz, SIAM J.Sci.Stat.Comput.
@@ -137,7 +137,7 @@ gmres_m (int n, const double *f, double *x,
 
   double *v = (double *)malloc (sizeof (double) * (m + 1) * n);
   double *h = (double *)malloc (sizeof (double) * m * m);
-  double *g = (double *)malloc (sizeof (double) * m + 1);
+  double *g = (double *)malloc (sizeof (double) * (m + 1));
   double *c = (double *)malloc (sizeof (double) * m);
   double *s = (double *)malloc (sizeof (double) * m);
   double *yv= (double *)malloc (sizeof (double) * n);
@@ -570,7 +570,7 @@ gmres_m_pc (int n, const double *f, double *x,
 
   double *v = (double *)malloc (sizeof (double) * (m + 1) * n);
   double *h = (double *)malloc (sizeof (double) * m * m);
-  double *g = (double *)malloc (sizeof (double) * m + 1);
+  double *g = (double *)malloc (sizeof (double) * (m + 1));
   double *c = (double *)malloc (sizeof (double) * m);
   double *s = (double *)malloc (sizeof (double) * m);
   double *yv= (double *)malloc (sizeof (double) * n);
@@ -1010,11 +1010,11 @@ gmres (int n, const double *f, double *x,
   int m = it->max;
   double eps = it->eps;
 
-  double *v = (double *) malloc (sizeof (double) * (m + 1) * n);
-  double *h = (double *) malloc (sizeof (double) * m * m);
-  double *g = (double *) malloc (sizeof (double) * m + 1);
-  double *c = (double *) malloc (sizeof (double) * m);
-  double *s = (double *) malloc (sizeof (double) * m);
+  double *v = (double *)malloc (sizeof (double) * (m + 1) * n);
+  double *h = (double *)malloc (sizeof (double) * m * m);
+  double *g = (double *)malloc (sizeof (double) * (m + 1));
+  double *c = (double *)malloc (sizeof (double) * m);
+  double *s = (double *)malloc (sizeof (double) * m);
   CHECK_MALLOC (v, "gmres");
   CHECK_MALLOC (h, "gmres");
   CHECK_MALLOC (g, "gmres");
