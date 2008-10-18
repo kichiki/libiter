@@ -1,6 +1,6 @@
 /* test code for libiter solvers
  * Copyright (C) 2006-2008 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: test-libiter.c,v 1.6 2008/10/15 04:05:05 kichiki Exp $
+ * $Id: test-libiter.c,v 1.7 2008/10/18 04:24:01 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,7 +54,7 @@ main (int argc, char** argv)
   check += check_cg_pc      (n, 1000,     1.0e-12, 1, 3.0e-10);
   check += check_gmres_m_pc (n, 1000, 20, 1.0e-12, 1, 7.0e-10);
   check += check_otmk_pc    (n, 1000, 20, 1.0e-12, 1, 5.5e-9);
-  check += check_sta_pc     (n, 1000,     1.0e-12, 1, 5.6e-9);
+  check += check_sta_pc     (n, 1000,     1.0e-12, 1, 1.0e-8);
   check += check_sta2_pc    (n, 1000,     1.0e-12, 1, 8.0e-9);
   check += check_gpb_pc     (n, 1000,     1.0e-12, 1, 1.1e-8);
 
