@@ -1,6 +1,6 @@
 /* test code for iterative schemes in general
- * Copyright (C) 2007 Kengo Ichiki <kichiki@users.sourceforge.net>
- * $Id: check-iter-gen.c,v 1.3 2007/12/01 18:11:53 kichiki Exp $
+ * Copyright (C) 2007-2008 Kengo Ichiki <kichiki@users.sourceforge.net>
+ * $Id: check-iter-gen.c,v 1.4 2008/10/25 05:24:59 kichiki Exp $
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -531,12 +531,11 @@ check_3_all (int it_max, int it_restart, double it_eps,
     {
       fprintf (stdout,
 	       "--------------------------------------------------\n"
+	       "Summary\n"
 	       "check_3_all (tiny = %e): finished\n", tiny);
 
-      if (check == 0)
-	fprintf (stdout, " => PASSED\n");
-      else
-	fprintf (stdout, " => FAILED\n");
+      if (check == 0) fprintf (stdout, " => PASSED\n");
+      else            fprintf (stdout, " => FAILED\n");
 
       fprintf (stdout,
 	       "==================================================\n\n");
@@ -736,12 +735,11 @@ check_3_all_ (int it_max, int it_restart, double it_eps,
     {
       fprintf (stdout,
 	       "--------------------------------------------------\n"
+	       "Summary\n"
 	       "check_3_all_ (tiny = %e): finished\n", tiny);
 
-      if (check == 0)
-	fprintf (stdout, " => PASSED\n");
-      else
-	fprintf (stdout, " => FAILED\n");
+      if (check == 0) fprintf (stdout, " => PASSED\n");
+      else            fprintf (stdout, " => FAILED\n");
 
       fprintf (stdout,
 	       "==================================================\n\n");
@@ -940,13 +938,12 @@ check_symmetric_all (int n, int it_max, int it_restart, double it_eps,
     {
       fprintf (stdout,
 	       "--------------------------------------------------\n"
+	       "Summary\n"
 	       "check_symmetric_all n = %d (eps = %e): finished\n",
 	       n, tiny);
 
-      if (check == 0)
-	fprintf (stdout, " => PASSED\n");
-      else
-	fprintf (stdout, " => FAILED\n");
+      if (check == 0) fprintf (stdout, " => PASSED\n");
+      else            fprintf (stdout, " => FAILED\n");
 
       fprintf (stdout,
 	       "==================================================\n\n");
